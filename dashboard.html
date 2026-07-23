@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
   <title>Dashboard E-commerce - Google Sheets JSON API</title>
   <style>
     body {
@@ -14,8 +16,39 @@
     }
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       color: #ff8c00;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .toolbar label {
+      color: #ffa500;
+      font-weight: 600;
+    }
+    .toolbar input,
+    .toolbar button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ff8c00;
+      background: #111;
+      color: #fff;
+    }
+    .toolbar input {
+      min-width: 150px;
+      color-scheme: dark;
+    }
+    .toolbar button {
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .toolbar button:hover {
+      background: #1f1406;
     }
     .cards {
       display: flex;
@@ -44,15 +77,64 @@
       margin-bottom: 40px;
     }
     .chart-container {
-      background: #111;
-      border-radius: 8px;
-      box-shadow: 0 0 15px #cc7000;
+      background: linear-gradient(135deg, #141414 0%, #0d0d0d 100%);
+      border: 1px solid rgba(255, 140, 0, 0.35);
+      border-radius: 12px;
+      box-shadow: 0 0 18px rgba(204, 112, 0, 0.35);
       padding: 20px;
       flex: 1 1 350px;
       max-width: 600px;
     }
-    canvas { max-width: 100%; }
+    .chart-container h3 {
+      margin: 0 0 12px;
+      text-align: center;
+      color: #ffb347;
+      font-size: 1.05em;
+    }
+    canvas {
+      max-width: 100%;
+      display: block;
+      height: 320px !important;
+    }
     .table-wrapper { overflow-x: auto; }
+    .table-filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(255, 140, 0, 0.12), rgba(255, 140, 0, 0.05));
+      border: 1px solid rgba(255, 140, 0, 0.3);
+      box-shadow: 0 0 10px rgba(255, 140, 0, 0.12);
+    }
+    .table-filters-title {
+      color: #ffb347;
+      font-weight: 700;
+      margin-right: 4px;
+      font-size: 0.95em;
+    }
+    .table-filters input,
+    .table-filters select,
+    .table-filters button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ff8c00;
+      background: #111;
+      color: #fff;
+      min-width: 160px;
+    }
+    .table-filters input[type="date"] {
+      min-width: 140px;
+      display: inline-block;
+    }
+    .table-filters button {
+      cursor: pointer;
+    }
+    .table-filters button:hover {
+      background: #1f1406;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -83,17 +165,27 @@
   </style>
 </head>
 <body>
-  <h1>Dashboard E-commerce - Google Sheets JSON API</h1>
+  <h1>Fechamente Fleet</h1>
+
+  <div class="toolbar">
+    <label for="dateFilter">Filtrar por data</label>
+    <input type="date" id="dateFilter" />
+    <label for="dateFilterFrom" style="color:#ffb347;">De</label>
+    <input type="date" id="dateFilterFrom" />
+    <label for="dateFilterTo" style="color:#ffb347;">Até</label>
+    <input type="date" id="dateFilterTo" />
+    <button id="applyDateFilter">Aplicar</button>
+    <button id="clearDateFilter">Limpar</button>
+  </div>
 
   <div class="cards">
-    <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pedidos</p></div>
-    <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Ativos</p></div>
-    <div class="card"><h2 id="totalVehicles">0</h2><p>Total Geral Veículos (Selecionados)</p></div>
-    <div class="card"><h2 id="totalMoto">0</h2><p>Total de Motos</p></div>
-    <div class="card"><h2 id="totalPasseio">0</h2><p>Total de Passeio</p></div>
-    <div class="card"><h2 id="totalFiorino">0</h2><p>Total de Fiorino</p></div>
-    <div class="card"><h2 id="totalVan">0</h2><p>Total de Van</p></div>
-    <div class="card"><h2 id="uniqueCreators">0</h2><p>Auxiliares (Creators)</p></div>
+    <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
+    <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
+    <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
+    <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
+    <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
+    <div class="card"><h2 id="totalVan">0</h2><p>Van</p></div>
+    <div class="card"><h2 id="uniqueCreators">0</h2><p>Operador</p></div>
   </div>
 
   <div class="charts">
@@ -104,6 +196,19 @@
   </div>
 
   <h3>Detalhes dos Pedidos</h3>
+  <div class="table-filters">
+    <span class="table-filters-title">Filtros da tabela</span>
+    <input type="text" id="tableSearch" placeholder="Buscar por task, motorista ou veículo" />
+    <label for="tableDateFrom" style="color:#ffb347; font-size:0.9em;">De</label>
+    <input type="date" id="tableDateFrom" />
+    <label for="tableDateTo" style="color:#ffb347; font-size:0.9em;">Até</label>
+    <input type="date" id="tableDateTo" />
+    <select id="tableVehicleFilter">
+      <option value="">Todos os veículos</option>
+    </select>
+    <button id="applyTableFilters" type="button">Filtrar</button>
+    <button id="clearTableFilters" type="button">Limpar</button>
+  </div>
   <div class="table-wrapper">
     <table>
       <thead>
@@ -126,7 +231,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const jsonUrl = 'https://script.google.com/macros/s/AKfycbyStVzW9PhWx3WBGLhgnjWGhXUcqkEo54DDAYZ5C1K5i_ShuI9YnkctOk7coSst7T_6/exec';
+    const spreadsheetId = '13ItptD7JUCh38h4TwWkdPTjX4Jr8x7mnp_deWXjk0Ys';
+    const spreadsheetGid = '0';
+    const spreadsheetCsvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${spreadsheetGid}`;
+    const spreadsheetCsvCandidates = [
+      spreadsheetCsvUrl,
+      `https://r.jina.ai/http/${encodeURIComponent(spreadsheetCsvUrl)}`,
+      `https://corsproxy.io/?${encodeURIComponent(spreadsheetCsvUrl)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(spreadsheetCsvUrl)}`
+    ];
 
     const normalize = value => String(value || '').trim();
     const firstValue = (obj, keys) => {
@@ -139,112 +252,371 @@
       return '';
     };
 
-    fetch(jsonUrl, { mode: 'cors', cache: 'no-store' })
-      .then(response => {
-        if (!response.ok) throw new Error('Erro ao buscar dados: ' + response.status);
-        return response.json();
-      })
-      .then(raw => {
-        console.log('Dados brutos:', raw);
+    const parseDateKey = value => {
+      const clean = normalize(value);
+      if (!clean) return '';
 
-        const rows = Array.isArray(raw)
-          ? raw
-          : raw.data || raw.records || raw.values || [];
+      const isoMatch = clean.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
+      if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
 
+      const brMatch = clean.match(/(\d{2})[/-](\d{2})[/-](\d{4})/);
+      if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+
+      const date = new Date(clean);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString().slice(0, 10);
+      }
+
+      return '';
+    };
+
+    let allDataset = [];
+    let currentDataset = [];
+
+    const getFilterState = () => ({
+      topDate: normalize(document.getElementById('dateFilter').value),
+      topDateFrom: normalize(document.getElementById('dateFilterFrom').value),
+      topDateTo: normalize(document.getElementById('dateFilterTo').value),
+      tableSearch: normalize(document.getElementById('tableSearch').value),
+      tableDateFrom: normalize(document.getElementById('tableDateFrom').value),
+      tableDateTo: normalize(document.getElementById('tableDateTo').value),
+      vehicle: normalize(document.getElementById('tableVehicleFilter').value)
+    });
+
+    const syncUrlWithFilters = state => {
+      const params = new URLSearchParams();
+      Object.entries(state).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+      });
+      const query = params.toString();
+      const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+      window.history.replaceState({}, '', nextUrl);
+    };
+
+    const applyFilterStateToInputs = state => {
+      document.getElementById('dateFilter').value = state.topDate || '';
+      document.getElementById('dateFilterFrom').value = state.topDateFrom || '';
+      document.getElementById('dateFilterTo').value = state.topDateTo || '';
+      document.getElementById('tableSearch').value = state.tableSearch || '';
+      document.getElementById('tableDateFrom').value = state.tableDateFrom || '';
+      document.getElementById('tableDateTo').value = state.tableDateTo || '';
+      document.getElementById('tableVehicleFilter').value = state.vehicle || '';
+    };
+
+    const loadFilterStateFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        topDate: normalize(params.get('topDate')),
+        topDateFrom: normalize(params.get('topDateFrom')),
+        topDateTo: normalize(params.get('topDateTo')),
+        tableSearch: normalize(params.get('tableSearch')),
+        tableDateFrom: normalize(params.get('tableDateFrom')),
+        tableDateTo: normalize(params.get('tableDateTo')),
+        vehicle: normalize(params.get('vehicle'))
+      };
+    };
+
+    const parseCsv = text => {
+      const rows = [];
+      let row = [];
+      let field = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (char === '"') {
+          if (inQuotes && text[i + 1] === '"') {
+            field += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          row.push(field);
+          field = '';
+        } else if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && text[i + 1] === '\n') i += 1;
+          row.push(field);
+          if (row.some(cell => normalize(cell) !== '')) rows.push(row);
+          row = [];
+          field = '';
+        } else {
+          field += char;
+        }
+      }
+
+      if (field.length > 0 || row.length > 0) {
+        row.push(field);
+        if (row.some(cell => normalize(cell) !== '')) rows.push(row);
+      }
+
+      if (rows.length === 0) return [];
+
+      const headers = rows[0].map(header => normalize(header));
+      return rows.slice(1)
+        .filter(values => values.some(value => normalize(value) !== ''))
+        .map(values => {
+          const item = {};
+          headers.forEach((header, index) => {
+            item[header] = values[index] ?? '';
+          });
+          return item;
+        });
+    };
+
+    const loadSpreadsheetRows = async () => {
+      for (const url of spreadsheetCsvCandidates) {
+        try {
+          const response = await fetch(url, { cache: 'no-store' });
+          if (!response.ok) continue;
+
+          const text = await response.text();
+          if (!text || text.includes('<html') || text.includes('Sign in')) continue;
+
+          const rows = parseCsv(text);
+          if (rows.length > 0) return rows;
+        } catch (error) {
+          console.warn('Falha ao tentar ler a planilha em', url, error);
+        }
+      }
+
+      throw new Error('Não foi possível carregar a planilha do Google Sheets.');
+    };
+
+    const buildDataset = rows => rows.map(row => ({
+      taskId: firstValue(row, ['Task ID', 'taskId', 'Task Id']),
+      driver: firstValue(row, ['Driver', 'driver']),
+      driverName: firstValue(row, ['Driver name', 'driverName', 'Driver Name']),
+      veiculo: firstValue(row, ['Veiculo', 'veiculo', 'Vehicle', 'Veículo']),
+      cluster: firstValue(row, ['Cluster', 'cluster']),
+      createTime: firstValue(row, ['Create Time', 'createTime', 'Create time']),
+      driverAssignedTime: firstValue(row, ['Driver Assigned Time', 'driverAssignedTime', 'Driver assigned time']),
+      creator: firstValue(row, ['Creator', 'creator']).toLowerCase(),
+      rowDate: parseDateKey(firstValue(row, ['Date', 'date', 'Data', 'Create Date', 'createDate', 'Data de criação'])),
+      numberOfOrders: parseInt(
+        normalize(firstValue(row, [
+          'Number of assigned orders/TO',
+          'Number of Assigned Orders/TO',
+          'numberOfOrders',
+          'assigned orders'
+        ])).replace(/[^\d]/g, ''),
+        10
+      ) || 0
+    }));
+
+    const getTableFilteredDataset = baseDataset => {
+      const searchTerm = normalize(document.getElementById('tableSearch').value).toLowerCase();
+      const vehicleFilter = normalize(document.getElementById('tableVehicleFilter').value).toLowerCase();
+      const dateFrom = normalize(document.getElementById('tableDateFrom').value);
+      const dateTo = normalize(document.getElementById('tableDateTo').value);
+
+      return baseDataset.filter(item => {
+        const haystack = `${item.taskId} ${item.driver} ${item.driverName} ${item.veiculo} ${item.cluster} ${item.creator}`.toLowerCase();
+        const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+        const matchesVehicle = !vehicleFilter || normalize(item.veiculo).toLowerCase().includes(vehicleFilter);
+
+        let matchesDate = true;
+        if (dateFrom && item.rowDate) {
+          matchesDate = matchesDate && item.rowDate >= dateFrom;
+        }
+        if (dateTo && item.rowDate) {
+          matchesDate = matchesDate && item.rowDate <= dateTo;
+        }
+
+        return matchesSearch && matchesVehicle && matchesDate;
+      });
+    };
+
+    const renderTable = dataset => {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      dataset.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.taskId}</td>
+          <td>${item.driver}</td>
+          <td>${item.driverName}</td>
+          <td>${item.veiculo}</td>
+          <td>${item.cluster}</td>
+          <td>${item.createTime}</td>
+          <td>${item.driverAssignedTime}</td>
+          <td>${item.creator}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    };
+
+    const renderDashboard = dataset => {
+      const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
+      const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
+      const uniqueCreators = new Set(dataset.map(item => item.creator)).size;
+
+      const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
+      dataset.forEach(item => {
+        const v = (item.veiculo || '').toLowerCase();
+        if (v.includes('van')) vehiclesCount.van += 1;
+        else if (v.includes('fiorino')) vehiclesCount.fiorino += 1;
+        else if (v.includes('moto')) vehiclesCount.moto += 1;
+        else if (v.includes('passeio')) vehiclesCount.passeio += 1;
+      });
+      const totalVehicles = Object.values(vehiclesCount).reduce((a, b) => a + b, 0);
+
+      document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
+      document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
+      document.getElementById('uniqueCreators').textContent = uniqueCreators;
+      document.getElementById('totalMoto').textContent = vehiclesCount.moto;
+      document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
+      document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
+      document.getElementById('totalVan').textContent = vehiclesCount.van;
+
+      const routesByVehicleCount = {};
+      dataset.forEach(item => {
+        const key = item.veiculo || 'Não informado';
+        routesByVehicleCount[key] = (routesByVehicleCount[key] || 0) + 1;
+      });
+
+      const vehicles = Object.keys(routesByVehicleCount);
+      const routesCount = vehicles.map(v => routesByVehicleCount[v]);
+      const barColors = ['#ff8c00', '#ffb347', '#ff6a00', '#ff4d00', '#c96b00', '#ffd166', '#7c4dff'];
+
+      const ctx = document.getElementById('routesByVehicle').getContext('2d');
+      if (window.routesChart) window.routesChart.destroy();
+      window.routesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: vehicles,
+          datasets: [{
+            label: 'Veículos carregados',
+            data: routesCount,
+            backgroundColor: vehicles.map((_, index) => barColors[index % barColors.length]),
+            borderColor: '#fff1d6',
+            borderWidth: 1,
+            borderRadius: 6,
+            barThickness: 36
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: context => `${context.parsed.y} veículos`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#ffb347' },
+              grid: { color: 'rgba(255, 140, 0, 0.15)' },
+              title: { display: true, text: 'Quantidade', color: '#ffb347' }
+            },
+            x: {
+              ticks: { maxRotation: 45, minRotation: 45, color: '#ffb347' },
+              grid: { display: false },
+              title: { display: true, text: 'Veículo', color: '#ffb347' }
+            }
+          }
+        }
+      });
+
+      renderTable(getTableFilteredDataset(dataset));
+
+      const loadingText = document.getElementById('loadingText');
+      loadingText.textContent = `Dados carregados da planilha (${dataset.length} registros).`;
+      loadingText.style.color = '#ffa500';
+      loadingText.style.display = 'block';
+    };
+
+    const applyDateFilter = () => {
+      const selectedDate = document.getElementById('dateFilter').value;
+      const dateFrom = document.getElementById('dateFilterFrom').value;
+      const dateTo = document.getElementById('dateFilterTo').value;
+
+      let filtered = allDataset;
+
+      if (dateFrom || dateTo) {
+        filtered = allDataset.filter(item => {
+          const rowDate = item.rowDate;
+          let matches = true;
+          if (dateFrom && rowDate) matches = matches && rowDate >= dateFrom;
+          if (dateTo && rowDate) matches = matches && rowDate <= dateTo;
+          return matches;
+        });
+      } else if (selectedDate) {
+        filtered = allDataset.filter(item => item.rowDate === selectedDate);
+      }
+
+      currentDataset = filtered;
+      syncUrlWithFilters(getFilterState());
+      renderDashboard(currentDataset);
+
+      const loadingText = document.getElementById('loadingText');
+      if (filtered.length === 0) {
+        loadingText.textContent = 'Nenhum registro encontrado para a data selecionada.';
+        loadingText.style.display = 'block';
+        loadingText.style.color = '#ffb347';
+      } else {
+        loadingText.style.display = 'none';
+      }
+    };
+
+    const applyTableFilters = () => {
+      syncUrlWithFilters(getFilterState());
+      renderTable(getTableFilteredDataset(currentDataset));
+    };
+
+    const clearTableFilters = () => {
+      document.getElementById('tableSearch').value = '';
+      document.getElementById('tableDateFrom').value = '';
+      document.getElementById('tableDateTo').value = '';
+      document.getElementById('tableVehicleFilter').value = '';
+      syncUrlWithFilters(getFilterState());
+      renderTable(getTableFilteredDataset(currentDataset));
+    };
+
+    document.getElementById('applyDateFilter').addEventListener('click', applyDateFilter);
+    document.getElementById('clearDateFilter').addEventListener('click', () => {
+      document.getElementById('dateFilter').value = '';
+      document.getElementById('dateFilterFrom').value = '';
+      document.getElementById('dateFilterTo').value = '';
+      currentDataset = allDataset;
+      syncUrlWithFilters(getFilterState());
+      renderDashboard(currentDataset);
+    });
+    document.getElementById('tableSearch').addEventListener('input', applyTableFilters);
+    document.getElementById('tableVehicleFilter').addEventListener('change', applyTableFilters);
+    document.getElementById('applyTableFilters').addEventListener('click', applyTableFilters);
+    document.getElementById('clearTableFilters').addEventListener('click', clearTableFilters);
+
+    loadSpreadsheetRows()
+      .then(rows => {
         if (!Array.isArray(rows) || rows.length === 0) {
           throw new Error('Nenhum dado disponível para exibir.');
         }
 
-        const dataset = rows.map(row => ({
-          taskId: firstValue(row, ['Task ID', 'taskId', 'Task Id']),
-          driver: firstValue(row, ['Driver', 'driver']),
-          driverName: firstValue(row, ['Driver name', 'driverName', 'Driver Name']),
-          veiculo: firstValue(row, ['Veiculo', 'veiculo', 'Vehicle', 'Veículo']),
-          cluster: firstValue(row, ['Cluster', 'cluster']),
-          createTime: firstValue(row, ['Create Time', 'createTime', 'Create time']),
-          driverAssignedTime: firstValue(row, ['Driver Assigned Time', 'driverAssignedTime', 'Driver assigned time']),
-          creator: firstValue(row, ['Creator', 'creator']).toLowerCase(),
-          numberOfOrders: parseInt(
-            normalize(firstValue(row, [
-              'Number of assigned orders/TO',
-              'Number of Assigned Orders/TO',
-              'numberOfOrders',
-              'assigned orders'
-            ])).replace(/[^\d]/g, ''),
-            10
-          ) || 0
-        }));
+        allDataset = buildDataset(rows);
+        currentDataset = allDataset;
 
-        const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
-        const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
-        const uniqueCreators = new Set(dataset.map(item => item.creator)).size;
+        const initialState = loadFilterStateFromUrl();
+        applyFilterStateToInputs(initialState);
 
-        const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
-        dataset.forEach(item => {
-          const v = item.veiculo.toLowerCase();
-          if (v.includes('van')) vehiclesCount.van += 1;
-          else if (v.includes('fiorino')) vehiclesCount.fiorino += 1;
-          else if (v.includes('moto')) vehiclesCount.moto += 1;
-          else if (v.includes('passeio')) vehiclesCount.passeio += 1;
-        });
-        const totalVehicles = Object.values(vehiclesCount).reduce((a, b) => a + b, 0);
-
-        document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
-        document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
-        document.getElementById('uniqueCreators').textContent = uniqueCreators;
-        document.getElementById('totalVehicles').textContent = totalVehicles;
-        document.getElementById('totalMoto').textContent = vehiclesCount.moto;
-        document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
-        document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
-        document.getElementById('totalVan').textContent = vehiclesCount.van;
-
-        const routesByVehicleCount = {};
-        dataset.forEach(item => {
-          const key = item.veiculo || 'Não informado';
-          routesByVehicleCount[key] = (routesByVehicleCount[key] || 0) + 1;
+        const vehicleSelect = document.getElementById('tableVehicleFilter');
+        const vehicles = Array.from(new Set(allDataset.map(item => normalize(item.veiculo)).filter(Boolean))).sort();
+        vehicles.forEach(vehicle => {
+          const option = document.createElement('option');
+          option.value = vehicle;
+          option.textContent = vehicle;
+          vehicleSelect.appendChild(option);
         });
 
-        const vehicles = Object.keys(routesByVehicleCount);
-        const routesCount = vehicles.map(v => routesByVehicleCount[v]);
-
-        const ctx = document.getElementById('routesByVehicle').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: vehicles,
-            datasets: [{
-              label: 'Quantidade de Rotas',
-              data: routesCount,
-              backgroundColor: '#ff8c00'
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: { beginAtZero: true },
-              x: { ticks: { maxRotation: 45, minRotation: 45 } }
-            }
-          }
-        });
-
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        dataset.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${item.taskId}</td>
-            <td>${item.driver}</td>
-            <td>${item.driverName}</td>
-            <td>${item.veiculo}</td>
-            <td>${item.cluster}</td>
-            <td>${item.createTime}</td>
-            <td>${item.driverAssignedTime}</td>
-            <td>${item.creator}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById('loadingText').style.display = 'none';
+        if (initialState.topDate || initialState.topDateFrom || initialState.topDateTo) {
+          applyDateFilter();
+        } else {
+          renderDashboard(currentDataset);
+        }
       })
       .catch(error => {
         const loadingText = document.getElementById('loadingText');
