@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard E-commerce - Google Sheets JSON API</title>
+<title>Dashboard E-commerce - Dados JSON API</title>
 <style>
   body {
     background-color: #000;
@@ -93,7 +93,7 @@
 </style>
 </head>
 <body>
-<h1>Dashboard E-commerce - Google Sheets JSON API</h1>
+<h1>Dashboard E-commerce - Dados JSON API</h1>
 <div class="cards">
   <div class="card">
     <h2 id="totalOrders">0</h2>
@@ -159,8 +159,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Substitua pela sua URL de API do Google Apps Script
-  const jsonUrl = 'https://script.google.com/macros/s/SEU_SCRIPT_ID/exec';
+  const jsonUrl = 'https://script.google.com/macros/s/AKfycbyStVzW9PhWx3WBGLhgnjWGhXUcqkEo54DDAYZ5C1K5i_ShuI9YnkctOk7coSst7T_6/exec';
 
   fetch(jsonUrl)
     .then(response => {
@@ -168,8 +167,6 @@
       return response.json();
     })
     .then(raw => {
-      // raw é array de objetos JSON diretamente da planilha
-
       const dataset = raw.map(r => ({
         taskId: (r['Task ID'] || '').trim(),
         driver: (r['Driver'] || '').trim(),
@@ -207,7 +204,6 @@
       document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
       document.getElementById('totalVan').textContent = vehiclesCount.van;
 
-      // Pedidos por motorista
       const ordersByDriver = {};
       dataset.forEach(d => {
         if (!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
@@ -216,7 +212,6 @@
       const drivers = Object.keys(ordersByDriver);
       const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-      // Distribuição de clusters
       const clustersCount = {};
       dataset.forEach(d => {
         clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
@@ -229,11 +224,18 @@
         type: 'bar',
         data: {
           labels: drivers,
-          datasets: [{ label: 'Quantidade de Pedidos', data: ordersCount, backgroundColor: '#ff8c00' }]
+          datasets: [{
+            label: 'Quantidade de Pedidos',
+            data: ordersCount,
+            backgroundColor: '#ff8c00',
+          }]
         },
         options: {
           responsive: true,
-          scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 45, minRotation: 45 } } }
+          scales: {
+            y: { beginAtZero: true },
+            x: { ticks: { maxRotation: 45, minRotation: 45 } }
+          }
         }
       });
 
