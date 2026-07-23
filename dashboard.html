@@ -195,19 +195,19 @@
       return acc + (isNaN(numPedidos) ? 0 : numPedidos);
     },0).toLocaleString();
 
-    // Motoristas únicos
     document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
 
-    // Auxiliares únicos (Creators)
     const creatorsSet = new Set(dataset.map(d => d.creator));
     document.getElementById('uniqueCreators').textContent = creatorsSet.size;
 
-    // Contagem veículos nas categorias solicitadas
     const vehiclesCount = { van:0, fiorino:0, moto:0, passeio:0 };
     dataset.forEach(d => {
       const v = d.veiculo.toLowerCase();
-      for (const key in vehiclesCount) {
-        if(v.includes(key)) { vehiclesCount[key]++; break; }
+      for(const key in vehiclesCount){
+        if(v.includes(key)) {
+          vehiclesCount[key]++;
+          break;
+        }
       }
     });
 
@@ -218,18 +218,23 @@
     document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
     document.getElementById('totalVan').textContent = vehiclesCount.van;
 
-    // Pedidos por motorista
     const ordersByDriver = {};
     raw.forEach(d => {
       const driverName = (d['Driver name'] || '').trim();
       const numPedidos = parseInt((d['Number of assigned orders/TO'] || '0').replace(/[^\d]/g, ''), 10);
-      if (!ordersByDriver[driverName]) ordersByDriver[driverName] = 0;
+      if(!ordersByDriver[driverName]) ordersByDriver[driverName] = 0;
       ordersByDriver[driverName] += isNaN(numPedidos) ? 0 : numPedidos;
     });
     const drivers = Object.keys(ordersByDriver);
     const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-    // Rodar gráficos
+    const clustersCount = {};
+    dataset.forEach(d => {
+      clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
+    });
+    const clusters = Object.keys(clustersCount);
+    const clustersValues = clusters.map(c => clustersCount[c]);
+
     const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
     new Chart(ctxDriver, {
       type: 'bar',
@@ -243,24 +248,23 @@
       }
     });
 
-    const clustersCount = {};
-    dataset.forEach(d => {
-      clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
-    });
-    const clusters = Object.keys(clustersCount);
-    const clustersValues = clusters.map(c => clustersCount[c]);
-
     const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
     new Chart(ctxCluster, {
       type: 'pie',
       data: {
         labels: clusters,
-        datasets: [{ data: clustersValues, backgroundColor: ['#ff8c00','#ffaf33','#ff9f1a','#cc7000','#ff7f00','#d35400','#7f4c00','#e67e22'] }]
+        datasets: [{
+          data: clustersValues,
+          backgroundColor: [
+            '#ff8c00', '#ffaf33', '#ff9f1a',
+            '#cc7000', '#ff7f00', '#d35400',
+            '#7f4c00', '#e67e22'
+          ],
+        }]
       },
       options: { responsive: true }
     });
 
-    // Preencher tabela na ordem solicitada
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     dataset.forEach(row => {
