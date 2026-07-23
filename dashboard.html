@@ -163,6 +163,7 @@
     .then(data => {
       const raw = csvToArray(data);
 
+      // Mapeando para as chaves que o dashboard usa
       const dataset = raw.map(r => ({
         driverName: r['Driver name'] || '',
         driver: r['Driver'] || '',
@@ -180,6 +181,7 @@
       document.getElementById('uniqueVehicles').textContent = new Set(dataset.map(d => d.veiculo)).size;
       document.getElementById('uniqueCreators').textContent = new Set(dataset.map(d => d.creator)).size;
 
+      // Pedidos por motorista
       const ordersByDriver = {};
       dataset.forEach(d => {
         if (!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
@@ -188,6 +190,7 @@
       const drivers = Object.keys(ordersByDriver);
       const ordersCount = drivers.map(d => ordersByDriver[d]);
 
+      // Distribuição de Clusters
       const clustersCount = {};
       dataset.forEach(d => {
         if (!clustersCount[d.cluster]) clustersCount[d.cluster] = 0;
@@ -196,6 +199,7 @@
       const clusters = Object.keys(clustersCount);
       const clustersValues = clusters.map(c => clustersCount[c]);
 
+      // Gráficos
       const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
       new Chart(ctxDriver, {
         type: 'bar',
