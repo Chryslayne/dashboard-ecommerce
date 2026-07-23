@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard de E-commerce</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 20px; background: #f4f7fa; color: #333;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+  }
+  .cards {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+  .card {
+    background: white;
+    box-shadow: 0 0 15px #ddd;
+    border-radius: 8px;
+    flex: 1 1 200px;
+    max-width: 240px;
+    padding: 20px;
+    text-align: center;
+  }
+  .card h2 {
+    font-size: 2.5em;
+    margin: 0 0 10px;
+    color: #27ae60;
+  }
+  .card p {
+    font-size: 1.1em;
+    color: #555;
+  }
+  .charts {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+  .chart-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #ddd;
+    padding: 20px;
+    flex: 1 1 350px;
+    max-width: 600px;
+  }
+  canvas {
+    max-width: 100%;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 0 15px #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  thead {
+    background: #2980b9;
+    color: white;
+  }
+  th, td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 0.9em;
+  }
+  tbody tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  @media (max-width: 768px) {
+    .charts, .cards {
+      flex-direction: column;
+      align-items: center;
+    }
+    .chart-container, .card {
+      max-width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+<h1>Dashboard de E-commerce - Análise de Rotas</h1>
+<div class="cards">
+  <div class="card">
+    <h2 id="totalOrders">0</h2>
+    <p>Total de Pedidos</p>
+  </div>
+  <div class="card">
+    <h2 id="uniqueDrivers">0</h2>
+    <p>Motoristas Ativos</p>
+  </div>
+  <div class="card">
+    <h2 id="uniqueVehicles">0</h2>
+    <p>Veículos Utilizados</p>
+  </div>
+  <div class="card">
+    <h2 id="uniqueCreators">0</h2>
+    <p>Auxiliares (Creators)</p>
+  </div>
+</div>
+
+<div class="charts">
+  <div class="chart-container">
+    <h3>Pedidos por Motorista</h3>
+    <canvas id="ordersByDriver"></canvas>
+  </div>
+  <div class="chart-container">
+    <h3>Distribuição de Rotas (Cluster)</h3>
+    <canvas id="clusterDistribution"></canvas>
+  </div>
+</div>
+
+<h3>Detalhes dos Pedidos</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Driver Name</th>
+      <th>Driver</th>
+      <th>Veículo</th>
+      <th>Qtd. Pedidos</th>
+      <th>Creator</th>
+      <th>Hora Início</th>
+      <th>Hora Fim</th>
+      <th>Task ID</th>
+      <th>Cluster</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+  // Carrega Chart.js mínimo via CDN
+  const scriptChart = document.createElement('script');
+  scriptChart.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+  document.head.appendChild(scriptChart);
+
+  scriptChart.onload = () => {
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJ4LQrzfgWhc1IxOt1N87c0od14oH0wItRLYZMSTY8F9zO-381KSnSiV2IcUv08c702y7_wSfwqIc_/pub?gid=0&single=true&output=csv';
+
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(data => {
+        const rows = data.trim().split('\n').map(r => r.split(','));
+        const header = rows.shift();
+
+        // Mapear índices das colunas para garantir flexibilidade
+        const indexMap = {};
+        header.forEach((h, i) => indexMap[h.trim()] = i);
+
+        // Processar dados
+        const dataset = rows.map(r => ({
+          driverName: r[indexMap['Driver name']] || '',
+          driver: r[indexMap['Driver']] || '',
+          veiculo: r[indexMap['Veiculo']] || '',
+          numberOfOrders: parseInt(r[indexMap['Number of order/TO']] || '0'),
+          creator: r[indexMap['Creator']] || '',
+          createTime: r[indexMap['Create Time']] || '',
+          driverAssignedTime: r[indexMap['Driver Assigned Time']] || '',
+          taskId: r[indexMap['Task ID']] || '',
+          cluster: r[indexMap['Cluster']] || ''
+        }));
+
+        // Métricas gerais
+        const totalOrders = dataset.reduce((acc, cur) => acc + (cur.numberOfOrders || 0), 0);
+        const uniqueDrivers = new Set(dataset.map(d => d.driverName)).size;
+        const uniqueVehicles = new Set(dataset.map(d => d.veiculo)).size;
+        const uniqueCreators = new Set(dataset.map(d => d.creator)).size;
+
+        document.getElementById('totalOrders').textContent = totalOrders;
+        document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
+        document.getElementById('uniqueVehicles').textContent = uniqueVehicles;
+        document.getElementById('uniqueCreators').textContent = uniqueCreators;
+
+        // Pedidos por Motorista
+        const ordersByDriverMap = {};
+        dataset.forEach(d => {
+          if (!ordersByDriverMap[d.driverName]) ordersByDriverMap[d.driverName] = 0;
+          ordersByDriverMap[d.driverName] += d.numberOfOrders;
+        });
+        const drivers = Object.keys(ordersByDriverMap);
+        const ordersPerDriver = drivers.map(d => ordersByDriverMap[d]);
+
+        // Distribuição de Clusters
+        const clusterMap = {};
+        dataset.forEach(d => {
+          if (!clusterMap[d.cluster]) clusterMap[d.cluster] = 0;
+          clusterMap[d.cluster] += 1;
+        });
+        const clusters = Object.keys(clusterMap);
+        const clustersValues = clusters.map(c => clusterMap[c]);
+
+        // Criar gráficos
+        const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
+        new Chart(ctxDriver, {
+          type: 'bar',
+          data: {
+            labels: drivers,
+            datasets: [{
+              label: 'Quantidade de Pedidos',
+              data: ordersPerDriver,
+              backgroundColor: '#2980b9',
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true },
+              x: { ticks: { maxRotation: 45, minRotation: 45 } }
+            }
+          }
+        });
+
+        const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
+        new Chart(ctxCluster, {
+          type: 'pie',
+          data: {
+            labels: clusters,
+            datasets: [{
+              data: clustersValues,
+              backgroundColor: [
+                '#27ae60', '#2980b9', '#8e44ad',
+                '#c0392b', '#f39c12', '#d35400',
+                '#2c3e50', '#7f8c8d'
+              ],
+            }]
+          },
+          options: { responsive: true }
+        });
+
+        // Preencher tabela detalhada
+        const tbody = document.getElementById('tableBody');
+        dataset.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.driverName}</td>
+            <td>${row.driver}</td>
+            <td>${row.veiculo}</td>
+            <td>${row.numberOfOrders}</td>
+            <td>${row.creator}</td>
+            <td>${row.createTime}</td>
+            <td>${row.driverAssignedTime}</td>
+            <td>${row.taskId}</td>
+            <td>${row.cluster}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(err => {
+        document.body.innerHTML = `<h2 style="color:red; text-align:center; margin-top:50px;">Erro ao carregar os dados:<br>${err}</h2>`;
+      });
+  };
+</script>
+</body>
+</html>
