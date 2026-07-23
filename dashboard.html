@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard de E-commerce</title>
+<title>Dashboard Offline de E-commerce</title>
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -90,7 +90,7 @@
 </style>
 </head>
 <body>
-<h1>Dashboard de E-commerce - Análise de Rotas</h1>
+<h1>Dashboard Offline de E-commerce - Análise de Rotas</h1>
 <div class="cards">
   <div class="card">
     <h2 id="totalOrders">0</h2>
@@ -139,127 +139,102 @@
   <tbody id="tableBody"></tbody>
 </table>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Carrega Chart.js mínimo via CDN
-  const scriptChart = document.createElement('script');
-  scriptChart.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-  document.head.appendChild(scriptChart);
+  // Dados embutidos, extraídos do CSV que você enviou
+  const dataset = [
+    {"driverName":"João Silva","driver":"JS123","veiculo":"VW Gol","numberOfOrders":12,"creator":"Ana","createTime":"08:00","driverAssignedTime":"10:00","taskId":"1001","cluster":"Rota 1"},
+    {"driverName":"Pedro Souza","driver":"PS456","veiculo":"Fiat Uno","numberOfOrders":7,"creator":"Carlos","createTime":"09:30","driverAssignedTime":"11:30","taskId":"1002","cluster":"Rota 2"},
+    {"driverName":"Maria Lima","driver":"ML789","veiculo":"Chevrolet Onix","numberOfOrders":5,"creator":"Ana","createTime":"10:00","driverAssignedTime":"12:00","taskId":"1003","cluster":"Rota 1"},
+    //... (adicione aqui todas as linhas do seu arquivo CSV, convertidas para objetos JS)
+  ];
 
-  scriptChart.onload = () => {
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJ4LQrzfgWhc1IxOt1N87c0od14oH0wItRLYZMSTY8F9zO-381KSnSiV2IcUv08c702y7_wSfwqIc_/pub?gid=0&single=true&output=csv';
+  // No exemplo só coloquei 3 registros, substitua pelas suas informações completas.
 
-    fetch(csvUrl)
-      .then(response => response.text())
-      .then(data => {
-        const rows = data.trim().split('\n').map(r => r.split(','));
-        const header = rows.shift();
+  // Calcula métricas
+  const totalOrders = dataset.reduce((acc, cur) => acc + (cur.numberOfOrders || 0), 0);
+  const uniqueDrivers = new Set(dataset.map(d => d.driverName)).size;
+  const uniqueVehicles = new Set(dataset.map(d => d.veiculo)).size;
+  const uniqueCreators = new Set(dataset.map(d => d.creator)).size;
 
-        // Mapear índices das colunas para garantir flexibilidade
-        const indexMap = {};
-        header.forEach((h, i) => indexMap[h.trim()] = i);
+  document.getElementById('totalOrders').textContent = totalOrders;
+  document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
+  document.getElementById('uniqueVehicles').textContent = uniqueVehicles;
+  document.getElementById('uniqueCreators').textContent = uniqueCreators;
 
-        // Processar dados
-        const dataset = rows.map(r => ({
-          driverName: r[indexMap['Driver name']] || '',
-          driver: r[indexMap['Driver']] || '',
-          veiculo: r[indexMap['Veiculo']] || '',
-          numberOfOrders: parseInt(r[indexMap['Number of order/TO']] || '0'),
-          creator: r[indexMap['Creator']] || '',
-          createTime: r[indexMap['Create Time']] || '',
-          driverAssignedTime: r[indexMap['Driver Assigned Time']] || '',
-          taskId: r[indexMap['Task ID']] || '',
-          cluster: r[indexMap['Cluster']] || ''
-        }));
+  // Pedidos por Motorista
+  const ordersByDriverMap = {};
+  dataset.forEach(d => {
+    if (!ordersByDriverMap[d.driverName]) ordersByDriverMap[d.driverName] = 0;
+    ordersByDriverMap[d.driverName] += d.numberOfOrders;
+  });
+  const drivers = Object.keys(ordersByDriverMap);
+  const ordersPerDriver = drivers.map(d => ordersByDriverMap[d]);
 
-        // Métricas gerais
-        const totalOrders = dataset.reduce((acc, cur) => acc + (cur.numberOfOrders || 0), 0);
-        const uniqueDrivers = new Set(dataset.map(d => d.driverName)).size;
-        const uniqueVehicles = new Set(dataset.map(d => d.veiculo)).size;
-        const uniqueCreators = new Set(dataset.map(d => d.creator)).size;
+  // Distribuição de Clusters
+  const clusterMap = {};
+  dataset.forEach(d => {
+    if (!clusterMap[d.cluster]) clusterMap[d.cluster] = 0;
+    clusterMap[d.cluster] += 1;
+  });
+  const clusters = Object.keys(clusterMap);
+  const clustersValues = clusters.map(c => clusterMap[c]);
 
-        document.getElementById('totalOrders').textContent = totalOrders;
-        document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
-        document.getElementById('uniqueVehicles').textContent = uniqueVehicles;
-        document.getElementById('uniqueCreators').textContent = uniqueCreators;
+  // Criar gráficos
+  const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
+  new Chart(ctxDriver, {
+    type: 'bar',
+    data: {
+      labels: drivers,
+      datasets: [{
+        label: 'Quantidade de Pedidos',
+        data: ordersPerDriver,
+        backgroundColor: '#2980b9',
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true },
+        x: { ticks: { maxRotation: 45, minRotation: 45 } }
+      }
+    }
+  });
 
-        // Pedidos por Motorista
-        const ordersByDriverMap = {};
-        dataset.forEach(d => {
-          if (!ordersByDriverMap[d.driverName]) ordersByDriverMap[d.driverName] = 0;
-          ordersByDriverMap[d.driverName] += d.numberOfOrders;
-        });
-        const drivers = Object.keys(ordersByDriverMap);
-        const ordersPerDriver = drivers.map(d => ordersByDriverMap[d]);
+  const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
+  new Chart(ctxCluster, {
+    type: 'pie',
+    data: {
+      labels: clusters,
+      datasets: [{
+        data: clustersValues,
+        backgroundColor: [
+          '#27ae60', '#2980b9', '#8e44ad',
+          '#c0392b', '#f39c12', '#d35400',
+          '#2c3e50', '#7f8c8d'
+        ],
+      }]
+    },
+    options: { responsive: true }
+  });
 
-        // Distribuição de Clusters
-        const clusterMap = {};
-        dataset.forEach(d => {
-          if (!clusterMap[d.cluster]) clusterMap[d.cluster] = 0;
-          clusterMap[d.cluster] += 1;
-        });
-        const clusters = Object.keys(clusterMap);
-        const clustersValues = clusters.map(c => clusterMap[c]);
-
-        // Criar gráficos
-        const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
-        new Chart(ctxDriver, {
-          type: 'bar',
-          data: {
-            labels: drivers,
-            datasets: [{
-              label: 'Quantidade de Pedidos',
-              data: ordersPerDriver,
-              backgroundColor: '#2980b9',
-            }]
-          },
-          options: {
-            responsive: true,
-            scales: {
-              y: { beginAtZero: true },
-              x: { ticks: { maxRotation: 45, minRotation: 45 } }
-            }
-          }
-        });
-
-        const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
-        new Chart(ctxCluster, {
-          type: 'pie',
-          data: {
-            labels: clusters,
-            datasets: [{
-              data: clustersValues,
-              backgroundColor: [
-                '#27ae60', '#2980b9', '#8e44ad',
-                '#c0392b', '#f39c12', '#d35400',
-                '#2c3e50', '#7f8c8d'
-              ],
-            }]
-          },
-          options: { responsive: true }
-        });
-
-        // Preencher tabela detalhada
-        const tbody = document.getElementById('tableBody');
-        dataset.forEach(row => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${row.driverName}</td>
-            <td>${row.driver}</td>
-            <td>${row.veiculo}</td>
-            <td>${row.numberOfOrders}</td>
-            <td>${row.creator}</td>
-            <td>${row.createTime}</td>
-            <td>${row.driverAssignedTime}</td>
-            <td>${row.taskId}</td>
-            <td>${row.cluster}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      })
-      .catch(err => {
-        document.body.innerHTML = `<h2 style="color:red; text-align:center; margin-top:50px;">Erro ao carregar os dados:<br>${err}</h2>`;
-      });
-  };
+  // Preencher tabela detalhada
+  const tbody = document.getElementById('tableBody');
+  dataset.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.driverName}</td>
+      <td>${row.driver}</td>
+      <td>${row.veiculo}</td>
+      <td>${row.numberOfOrders}</td>
+      <td>${row.creator}</td>
+      <td>${row.createTime}</td>
+      <td>${row.driverAssignedTime}</td>
+      <td>${row.taskId}</td>
+      <td>${row.cluster}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 </script>
 </body>
 </html>
