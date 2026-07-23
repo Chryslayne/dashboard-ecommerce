@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard E-commerce - Google Sheets</title>
+<title>Dashboard E-commerce - Google Sheets JSON API</title>
 <style>
   body {
     background-color: #000;
@@ -93,7 +93,7 @@
 </style>
 </head>
 <body>
-<h1>Dashboard E-commerce - Google Sheets</h1>
+<h1>Dashboard E-commerce - Google Sheets JSON API</h1>
 <div class="cards">
   <div class="card">
     <h2 id="totalOrders">0</h2>
@@ -159,131 +159,121 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const csvUrl = 'https://docs.google.com/spreadsheets/d/13ItptD7JUCh38h4TwWkdPTjX4Jr8x7mnp_deWXjk0Ys/export?format=csv&gid=0';
+  // Substitua pela sua URL de API do Google Apps Script
+  const jsonUrl = 'https://script.google.com/macros/s/SEU_SCRIPT_ID/exec';
 
-  function csvToArray(str, delimiter = ',') {
-    const headers = str.slice(0, str.indexOf('\n')).split(delimiter).map(h => h.trim());
-    const rows = str.slice(str.indexOf('\n') + 1).split('\n').filter(r => r.trim().length > 0);
-    return rows.map(row => {
-      const values = row.split(delimiter);
-      return headers.reduce((obj, header, index) => {
-        obj[header] = values[index] ? values[index].trim() : '';
-        return obj;
-      }, {});
-    });
-  }
+  fetch(jsonUrl)
+    .then(response => {
+      if (!response.ok) throw new Error('Erro ao buscar dados: ' + response.status);
+      return response.json();
+    })
+    .then(raw => {
+      // raw é array de objetos JSON diretamente da planilha
 
-  fetch(csvUrl).then(response => {
-    if(!response.ok) throw new Error('Erro ao buscar dados: ' + response.status);
-    return response.text();
-  }).then(data => {
-    const raw = csvToArray(data);
+      const dataset = raw.map(r => ({
+        taskId: (r['Task ID'] || '').trim(),
+        driver: (r['Driver'] || '').trim(),
+        driverName: (r['Driver name'] || '').trim(),
+        veiculo: (r['Veiculo'] || '').trim(),
+        cluster: (r['Cluster'] || '').trim(),
+        createTime: (r['Create Time'] || '').trim(),
+        driverAssignedTime: (r['Driver Assigned Time'] || '').trim(),
+        creator: (r['Creator'] || '').trim().toLowerCase(),
+        numberOfOrders: parseInt((r['Number of assigned orders/TO'] || '0').replace(/[^\d]/g,''), 10) || 0
+      }));
 
-    const dataset = raw.map(r => ({
-      taskId: (r['Task ID'] || '').trim(),
-      driver: (r['Driver'] || '').trim(),
-      driverName: (r['Driver name'] || '').trim(),
-      veiculo: (r['Veiculo'] || '').trim(),
-      cluster: (r['Cluster'] || '').trim(),
-      createTime: (r['Create Time'] || '').trim(),
-      driverAssignedTime: (r['Driver Assigned Time'] || '').trim(),
-      creator: (r['Creator'] || '').trim().toLowerCase()
-    }));
+      const totalOrders = dataset.reduce((acc,d) => acc + d.numberOfOrders, 0);
+      const uniqueDrivers = new Set(dataset.map(d => d.driverName)).size;
+      const creatorsSet = new Set(dataset.map(d => d.creator));
 
-    document.getElementById('totalOrders').textContent = raw.reduce((acc, d) => {
-      const numPedidos = parseInt((d['Number of assigned orders/TO'] || '0').replace(/[^\d]/g, ''), 10);
-      return acc + (isNaN(numPedidos) ? 0 : numPedidos);
-    },0).toLocaleString();
-
-    document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
-
-    const creatorsSet = new Set(dataset.map(d => d.creator));
-    document.getElementById('uniqueCreators').textContent = creatorsSet.size;
-
-    const vehiclesCount = { van:0, fiorino:0, moto:0, passeio:0 };
-    dataset.forEach(d => {
-      const v = d.veiculo.toLowerCase();
-      for(const key in vehiclesCount){
-        if(v.includes(key)) {
-          vehiclesCount[key]++;
-          break;
+      const vehiclesCount = { van:0, fiorino:0, moto:0, passeio:0 };
+      dataset.forEach(d => {
+        const v = d.veiculo.toLowerCase();
+        for (const key in vehiclesCount) {
+          if (v.includes(key)) {
+            vehiclesCount[key]++;
+            break;
+          }
         }
-      }
-    });
+      });
+      const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
 
-    const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b,0);
-    document.getElementById('totalVehicles').textContent = totalVehicles;
-    document.getElementById('totalMoto').textContent = vehiclesCount.moto;
-    document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
-    document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
-    document.getElementById('totalVan').textContent = vehiclesCount.van;
+      document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
+      document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
+      document.getElementById('uniqueCreators').textContent = creatorsSet.size;
+      document.getElementById('totalVehicles').textContent = totalVehicles;
+      document.getElementById('totalMoto').textContent = vehiclesCount.moto;
+      document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
+      document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
+      document.getElementById('totalVan').textContent = vehiclesCount.van;
 
-    const ordersByDriver = {};
-    raw.forEach(d => {
-      const driverName = (d['Driver name'] || '').trim();
-      const numPedidos = parseInt((d['Number of assigned orders/TO'] || '0').replace(/[^\d]/g, ''), 10);
-      if(!ordersByDriver[driverName]) ordersByDriver[driverName] = 0;
-      ordersByDriver[driverName] += isNaN(numPedidos) ? 0 : numPedidos;
-    });
-    const drivers = Object.keys(ordersByDriver);
-    const ordersCount = drivers.map(d => ordersByDriver[d]);
+      // Pedidos por motorista
+      const ordersByDriver = {};
+      dataset.forEach(d => {
+        if (!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
+        ordersByDriver[d.driverName] += d.numberOfOrders;
+      });
+      const drivers = Object.keys(ordersByDriver);
+      const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-    const clustersCount = {};
-    dataset.forEach(d => {
-      clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
-    });
-    const clusters = Object.keys(clustersCount);
-    const clustersValues = clusters.map(c => clustersCount[c]);
+      // Distribuição de clusters
+      const clustersCount = {};
+      dataset.forEach(d => {
+        clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
+      });
+      const clusters = Object.keys(clustersCount);
+      const clustersValues = clusters.map(c => clustersCount[c]);
 
-    const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
-    new Chart(ctxDriver, {
-      type: 'bar',
-      data: {
-        labels: drivers,
-        datasets: [{ label: 'Quantidade de Pedidos', data: ordersCount, backgroundColor: '#ff8c00' }]
-      },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 45, minRotation: 45 } } }
-      }
-    });
+      const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
+      new Chart(ctxDriver, {
+        type: 'bar',
+        data: {
+          labels: drivers,
+          datasets: [{ label: 'Quantidade de Pedidos', data: ordersCount, backgroundColor: '#ff8c00' }]
+        },
+        options: {
+          responsive: true,
+          scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 45, minRotation: 45 } } }
+        }
+      });
 
-    const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
-    new Chart(ctxCluster, {
-      type: 'pie',
-      data: {
-        labels: clusters,
-        datasets: [{
-          data: clustersValues,
-          backgroundColor: [
-            '#ff8c00', '#ffaf33', '#ff9f1a',
-            '#cc7000', '#ff7f00', '#d35400',
-            '#7f4c00', '#e67e22'
-          ],
-        }]
-      },
-      options: { responsive: true }
-    });
+      const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
+      new Chart(ctxCluster, {
+        type: 'pie',
+        data: {
+          labels: clusters,
+          datasets: [{
+            data: clustersValues,
+            backgroundColor: [
+              '#ff8c00', '#ffaf33', '#ff9f1a',
+              '#cc7000', '#ff7f00', '#d35400',
+              '#7f4c00', '#e67e22'
+            ],
+          }]
+        },
+        options: { responsive: true }
+      });
 
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '';
-    dataset.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.style.color = '#ff8c00';
-      tr.innerHTML = `
-        <td>${row.taskId}</td>
-        <td>${row.driver}</td>
-        <td>${row.driverName}</td>
-        <td>${row.veiculo}</td>
-        <td>${row.cluster}</td>
-        <td>${row.createTime}</td>
-        <td>${row.driverAssignedTime}</td>
-        <td>${row.creator}</td>`;
-      tbody.appendChild(tr);
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      dataset.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.style.color = '#ff8c00';
+        tr.innerHTML = `
+          <td>${row.taskId}</td>
+          <td>${row.driver}</td>
+          <td>${row.driverName}</td>
+          <td>${row.veiculo}</td>
+          <td>${row.cluster}</td>
+          <td>${row.createTime}</td>
+          <td>${row.driverAssignedTime}</td>
+          <td>${row.creator}</td>`;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      document.body.innerHTML = `<h2 style="color:red; text-align:center; margin-top:50px;">${err.message}</h2>`;
     });
-  }).catch(err => {
-    document.body.innerHTML = `<h2 style="color:red; text-align:center; margin-top:50px;">${err.message}</h2>`;
-  });
 </script>
 </body>
 </html>
