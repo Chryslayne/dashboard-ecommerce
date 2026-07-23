@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dashboard E-commerce - Google Sheets</title>
 <style>
+  /* (mesmo CSS do exemplo anterior) */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0; padding: 20px; background: #f4f7fa; color: #333;
@@ -39,6 +40,7 @@
     font-size: 1em;
     color: #555;
   }
+  /* restante do CSS conforme antes */
   .charts {
     display: flex;
     gap: 40px;
@@ -172,8 +174,7 @@
   }
 
   function formatTime(timeStr) {
-    // Interpreta horários no formato "HHMMSSFF", retorna "HH:MM:SS"
-    if (!timeStr || timeStr.length < 6) return "";
+    if(!timeStr || timeStr.length < 6) return "";
     const hh = timeStr.substr(0,2);
     const mm = timeStr.substr(2,2);
     const ss = timeStr.substr(4,2);
@@ -189,40 +190,34 @@
       const raw = csvToArray(data);
 
       const dataset = raw.map(r => ({
-        driverName: r['Driver name'] || '',
-        driver: r['Driver'] || '',
-        veiculo: r['Veiculo'] || '',
+        driverName: (r['Driver name'] || '').trim(),
+        driver: (r['Driver'] || '').trim(),
+        veiculo: (r['Veiculo'] || '').trim(),
         numberOfOrders: parseInt(r['Number of order/TO'] || '0', 10) || 0,
-        creator: r['Creator'] || '',
+        creator: (r['Creator'] || '').trim(),
         createTime: formatTime(r['Create Time']),
         driverAssignedTime: formatTime(r['Driver Assigned Time']),
-        taskId: r['Task ID'] || '',
-        cluster: r['Cluster'] || ''
+        taskId: (r['Task ID'] || '').trim(),
+        cluster: (r['Cluster'] || '').trim()
       }));
 
-      // Total de pedidos
       document.getElementById('totalOrders').textContent = dataset.reduce((acc, d) => acc + d.numberOfOrders, 0);
-
-      // Motoristas únicos
       document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
-
-      // Auxiliares (Creators) únicos
       document.getElementById('uniqueCreators').textContent = new Set(dataset.map(d => d.creator)).size;
 
-      // Quantidade de veículos por categoria
+      // Conta veículos por categoria
       const vehiclesCount = {};
       dataset.forEach(d => {
         const v = (d.veiculo || "Não informado").toLowerCase();
         vehiclesCount[v] = (vehiclesCount[v] || 0) + 1;
       });
-
-      document.getElementById('totalVehicles').textContent = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
+      document.getElementById('totalVehicles').textContent = Object.values(vehiclesCount).reduce((a,b) => a + b, 0);
       document.getElementById('totalMoto').textContent = vehiclesCount['moto'] || 0;
       document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'] || 0;
       document.getElementById('totalFiorino').textContent = vehiclesCount['fiorino'] || 0;
       document.getElementById('totalVan').textContent = vehiclesCount['van'] || 0;
 
-      // Pedidos por motorista (gráfico)
+      // Pedidos por motorista
       const ordersByDriver = {};
       dataset.forEach(d => {
         if(!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
@@ -231,7 +226,7 @@
       const drivers = Object.keys(ordersByDriver);
       const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-      // Distribuição de rotas (Cluster)
+      // Distribuição de clusters
       const clustersCount = {};
       dataset.forEach(d => {
         if(!clustersCount[d.cluster]) clustersCount[d.cluster] = 0;
@@ -261,7 +256,7 @@
         }
       });
 
-      // Gráfico distribuição de rotas (cluster)
+      // Gráfico distribuição rotas (cluster)
       const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
       new Chart(ctxCluster, {
         type: 'pie',
