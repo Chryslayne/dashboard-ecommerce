@@ -144,15 +144,14 @@
 <table>
   <thead>
     <tr>
-      <th>Driver Name</th>
-      <th>Driver</th>
-      <th>Veículo</th>
-      <th>Qtd. Pedidos</th>
-      <th>Creator</th>
-      <th>Hora Início</th>
-      <th>Hora Fim</th>
       <th>Task ID</th>
+      <th>Driver</th>
+      <th>Driver Name</th>
+      <th>Veículo</th>
       <th>Cluster</th>
+      <th>Hora de Início</th>
+      <th>Hora de Fim</th>
+      <th>Creator</th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
@@ -174,14 +173,6 @@
     });
   }
 
-  function formatTime(timeStr) {
-    if(!timeStr || timeStr.length < 6) return "";
-    const hh = timeStr.substr(0,2);
-    const mm = timeStr.substr(2,2);
-    const ss = timeStr.substr(4,2);
-    return `${hh}:${mm}:${ss}`;
-  }
-
   fetch(csvUrl).then(response => {
     if(!response.ok) throw new Error('Erro ao buscar dados: ' + response.status);
     return response.text();
@@ -189,107 +180,101 @@
     const raw = csvToArray(data);
 
     const dataset = raw.map(r => ({
-      driverName: (r['Driver name'] || '').trim(),
-      driver: (r['Driver'] || '').trim(),
-      veiculo: (r['Veiculo'] || '').trim(),
-      numberOfOrders: parseInt((r['Number of assigned orders/TO'] || '0').replace(/[^\d]/g,''), 10) || 0,
-      creator: (r['Creator'] || '').trim().toLowerCase(),
-      createTime: formatTime(r['Create Time']),
-      driverAssignedTime: formatTime(r['Driver Assigned Time']),
       taskId: (r['Task ID'] || '').trim(),
-      cluster: (r['Cluster'] || '').trim()
+      driver: (r['Driver'] || '').trim(),
+      driverName: (r['Driver name'] || '').trim(),
+      veiculo: (r['Veiculo'] || '').trim(),
+      cluster: (r['Cluster'] || '').trim(),
+      createTime: (r['Create Time'] || '').trim(),
+      driverAssignedTime: (r['Driver Assigned Time'] || '').trim(),
+      creator: (r['Creator'] || '').trim().toLowerCase()
     }));
 
-    document.getElementById('totalOrders').textContent = dataset.reduce((acc,d) => acc + d.numberOfOrders, 0).toLocaleString();
+    document.getElementById('totalOrders').textContent = raw.reduce((acc, d) => {
+      const numPedidos = parseInt((d['Number of assigned orders/TO'] || '0').replace(/[^\d]/g, ''), 10);
+      return acc + (isNaN(numPedidos) ? 0 : numPedidos);
+    },0).toLocaleString();
+
+    // Motoristas únicos
     document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
 
+    // Auxiliares únicos (Creators)
     const creatorsSet = new Set(dataset.map(d => d.creator));
     document.getElementById('uniqueCreators').textContent = creatorsSet.size;
 
-    // Categorias de veículos que queremos contar
-    const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
+    // Contagem veículos nas categorias solicitadas
+    const vehiclesCount = { van:0, fiorino:0, moto:0, passeio:0 };
     dataset.forEach(d => {
       const v = d.veiculo.toLowerCase();
-      if(vehiclesCount.hasOwnProperty(v)){
-        vehiclesCount[v]++;
+      for (const key in vehiclesCount) {
+        if(v.includes(key)) { vehiclesCount[key]++; break; }
       }
     });
 
-    const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
+    const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b,0);
     document.getElementById('totalVehicles').textContent = totalVehicles;
-    document.getElementById('totalMoto').textContent = vehiclesCount['moto'];
-    document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'];
-    document.getElementById('totalFiorino').textContent = vehiclesCount['fiorino'];
-    document.getElementById('totalVan').textContent = vehiclesCount['van'];
+    document.getElementById('totalMoto').textContent = vehiclesCount.moto;
+    document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
+    document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
+    document.getElementById('totalVan').textContent = vehiclesCount.van;
 
+    // Pedidos por motorista
     const ordersByDriver = {};
-    dataset.forEach(d => {
-      if(!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
-      ordersByDriver[d.driverName] += d.numberOfOrders;
+    raw.forEach(d => {
+      const driverName = (d['Driver name'] || '').trim();
+      const numPedidos = parseInt((d['Number of assigned orders/TO'] || '0').replace(/[^\d]/g, ''), 10);
+      if (!ordersByDriver[driverName]) ordersByDriver[driverName] = 0;
+      ordersByDriver[driverName] += isNaN(numPedidos) ? 0 : numPedidos;
     });
     const drivers = Object.keys(ordersByDriver);
     const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-    const clustersCount = {};
-    dataset.forEach(d => {
-      if(!clustersCount[d.cluster]) clustersCount[d.cluster] = 0;
-      clustersCount[d.cluster]++;
-    });
-    const clusters = Object.keys(clustersCount);
-    const clustersValues = clusters.map(c => clustersCount[c]);
-
+    // Rodar gráficos
     const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
     new Chart(ctxDriver, {
       type: 'bar',
       data: {
         labels: drivers,
-        datasets: [{
-          label: 'Quantidade de Pedidos',
-          data: ordersCount,
-          backgroundColor: '#ff8c00',
-        }]
+        datasets: [{ label: 'Quantidade de Pedidos', data: ordersCount, backgroundColor: '#ff8c00' }]
       },
       options: {
         responsive: true,
-        scales: {
-          y: { beginAtZero: true },
-          x: { ticks: { maxRotation: 45, minRotation: 45 } }
-        }
+        scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 45, minRotation: 45 } } }
       }
     });
+
+    const clustersCount = {};
+    dataset.forEach(d => {
+      clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
+    });
+    const clusters = Object.keys(clustersCount);
+    const clustersValues = clusters.map(c => clustersCount[c]);
 
     const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
     new Chart(ctxCluster, {
       type: 'pie',
       data: {
         labels: clusters,
-        datasets: [{
-          data: clustersValues,
-          backgroundColor: [
-            '#ff8c00', '#ffaf33', '#ff9f1a',
-            '#cc7000', '#ff7f00', '#d35400',
-            '#7f4c00', '#e67e22'
-          ],
-        }]
+        datasets: [{ data: clustersValues, backgroundColor: ['#ff8c00','#ffaf33','#ff9f1a','#cc7000','#ff7f00','#d35400','#7f4c00','#e67e22'] }]
       },
       options: { responsive: true }
     });
 
+    // Preencher tabela na ordem solicitada
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     dataset.forEach(row => {
       const tr = document.createElement('tr');
       tr.style.color = '#ff8c00';
       tr.innerHTML = `
-        <td>${row.driverName}</td>
+        <td>${row.taskId}</td>
         <td>${row.driver}</td>
+        <td>${row.driverName}</td>
         <td>${row.veiculo}</td>
-        <td>${row.numberOfOrders}</td>
-        <td>${row.creator}</td>
+        <td>${row.cluster}</td>
         <td>${row.createTime}</td>
         <td>${row.driverAssignedTime}</td>
-        <td>${row.taskId}</td>
-        <td>${row.cluster}</td>`;
+        <td>${row.creator}</td>`;
       tbody.appendChild(tr);
     });
   }).catch(err => {
