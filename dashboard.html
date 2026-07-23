@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dashboard E-commerce - Google Sheets</title>
 <style>
-  /* (mesmo CSS do exemplo anterior) */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0; padding: 20px; background: #f4f7fa; color: #333;
@@ -40,7 +39,6 @@
     font-size: 1em;
     color: #555;
   }
-  /* restante do CSS conforme antes */
   .charts {
     display: flex;
     gap: 40px;
@@ -193,24 +191,31 @@
         driverName: (r['Driver name'] || '').trim(),
         driver: (r['Driver'] || '').trim(),
         veiculo: (r['Veiculo'] || '').trim(),
-        numberOfOrders: parseInt(r['Number of order/TO'] || '0', 10) || 0,
-        creator: (r['Creator'] || '').trim(),
+        numberOfOrders: parseInt((r['Number of order/TO'] || '0').replace(/[^\d]/g,''), 10) || 0,
+        creator: (r['Creator'] || '').trim().toLowerCase(),
         createTime: formatTime(r['Create Time']),
         driverAssignedTime: formatTime(r['Driver Assigned Time']),
         taskId: (r['Task ID'] || '').trim(),
         cluster: (r['Cluster'] || '').trim()
       }));
 
+      // Total de pedidos
       document.getElementById('totalOrders').textContent = dataset.reduce((acc, d) => acc + d.numberOfOrders, 0);
-      document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
-      document.getElementById('uniqueCreators').textContent = new Set(dataset.map(d => d.creator)).size;
 
-      // Conta veículos por categoria
+      // Motoristas únicos
+      document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
+
+      // Auxiliares únicos (Creators), limpos e padronizados em minúsculas
+      const creatorsSet = new Set(dataset.map(d => d.creator));
+      document.getElementById('uniqueCreators').textContent = creatorsSet.size;
+
+      // Quantidade de veículos por categoria
       const vehiclesCount = {};
       dataset.forEach(d => {
-        const v = (d.veiculo || "Não informado").toLowerCase();
+        const v = d.veiculo.toLowerCase();
         vehiclesCount[v] = (vehiclesCount[v] || 0) + 1;
       });
+
       document.getElementById('totalVehicles').textContent = Object.values(vehiclesCount).reduce((a,b) => a + b, 0);
       document.getElementById('totalMoto').textContent = vehiclesCount['moto'] || 0;
       document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'] || 0;
@@ -226,7 +231,7 @@
       const drivers = Object.keys(ordersByDriver);
       const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-      // Distribuição de clusters
+      // Distribuição clusters
       const clustersCount = {};
       dataset.forEach(d => {
         if(!clustersCount[d.cluster]) clustersCount[d.cluster] = 0;
@@ -256,7 +261,7 @@
         }
       });
 
-      // Gráfico distribuição rotas (cluster)
+      // Gráfico distribuições clusters
       const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
       new Chart(ctxCluster, {
         type: 'pie',
