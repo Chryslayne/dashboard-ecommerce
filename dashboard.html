@@ -141,21 +141,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const csvUrl = 'https://docs.google.com/spreadsheets/d/1GPmYUifqtHqwGAGWR_EZTjYe1KrMTTqZbBKMm03B7xA/export?format=csv&gid=0';
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/13ItptD7JUCh38h4TwWkdPTjX4Jr8x7mnp_deWXjk0Ys/export?format=csv&gid=0';
 
-  // Função para converter CSV para array de objetos
   function csvToArray(str, delimiter = ',') {
-    const headers = str.slice(0, str.indexOf('\n')).split(delimiter);
-    const rows = str.slice(str.indexOf('\n') + 1).split('\n');
-    const arr = rows.map(row => {
+    const headers = str.slice(0, str.indexOf('\n')).split(delimiter).map(h => h.trim());
+    const rows = str.slice(str.indexOf('\n') + 1).split('\n').filter(r => r.trim().length > 0);
+    return rows.map(row => {
       const values = row.split(delimiter);
-      const obj = headers.reduce((acc, header, index) => {
-        acc[header.trim()] = values[index] ? values[index].trim() : "";
-        return acc;
+      return headers.reduce((obj, header, index) => {
+        obj[header] = values[index] ? values[index].trim() : '';
+        return obj;
       }, {});
-      return obj;
     });
-    return arr;
   }
 
   fetch(csvUrl)
@@ -166,12 +163,11 @@
     .then(data => {
       const raw = csvToArray(data);
 
-      // Mapear e formatar os dados para o padrão do dashboard
       const dataset = raw.map(r => ({
         driverName: r['Driver name'] || '',
         driver: r['Driver'] || '',
         veiculo: r['Veiculo'] || '',
-        numberOfOrders: parseInt(r['Number of order/TO']) || 0,
+        numberOfOrders: parseInt(r['Number of order/TO'] || '0', 10) || 0,
         creator: r['Creator'] || '',
         createTime: r['Create Time'] || '',
         driverAssignedTime: r['Driver Assigned Time'] || '',
@@ -179,13 +175,11 @@
         cluster: r['Cluster'] || ''
       }));
 
-      // Atualiza as métricas
       document.getElementById('totalOrders').textContent = dataset.reduce((acc, d) => acc + d.numberOfOrders, 0);
       document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
       document.getElementById('uniqueVehicles').textContent = new Set(dataset.map(d => d.veiculo)).size;
       document.getElementById('uniqueCreators').textContent = new Set(dataset.map(d => d.creator)).size;
 
-      // Pedidos por motorista
       const ordersByDriver = {};
       dataset.forEach(d => {
         if (!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
@@ -194,7 +188,6 @@
       const drivers = Object.keys(ordersByDriver);
       const ordersCount = drivers.map(d => ordersByDriver[d]);
 
-      // Distribuição de Clusters
       const clustersCount = {};
       dataset.forEach(d => {
         if (!clustersCount[d.cluster]) clustersCount[d.cluster] = 0;
@@ -203,7 +196,6 @@
       const clusters = Object.keys(clustersCount);
       const clustersValues = clusters.map(c => clustersCount[c]);
 
-      // Gerar gráficos
       const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
       new Chart(ctxDriver, {
         type: 'bar',
@@ -241,7 +233,6 @@
         options: { responsive: true }
       });
 
-      // Preencher a tabela
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
       dataset.forEach(row => {
