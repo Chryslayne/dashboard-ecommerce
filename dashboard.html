@@ -7,7 +7,7 @@
 <style>
   body {
     background-color: #000;
-    color: #39ff14; /* verde neon para destaque */
+    color: #39ff14;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0; padding: 20px;
   }
@@ -192,7 +192,7 @@
       driverName: (r['Driver name'] || '').trim(),
       driver: (r['Driver'] || '').trim(),
       veiculo: (r['Veiculo'] || '').trim(),
-      numberOfOrders: parseInt((r['Number of order/TO'] || '0').replace(/[^\d]/g,''), 10) || 0,
+      numberOfOrders: parseInt((r['Number of assigned orders/TO'] || '0').replace(/[^\d]/g,''), 10) || 0,
       creator: (r['Creator'] || '').trim().toLowerCase(),
       createTime: formatTime(r['Create Time']),
       driverAssignedTime: formatTime(r['Driver Assigned Time']),
