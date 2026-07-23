@@ -105,7 +105,7 @@
   </div>
   <div class="card">
     <h2 id="totalVehicles">0</h2>
-    <p>Total Geral Veículos</p>
+    <p>Total Geral Veículos (Selecionados)</p>
   </div>
   <div class="card">
     <h2 id="totalMoto">0</h2>
@@ -206,17 +206,21 @@
     const creatorsSet = new Set(dataset.map(d => d.creator));
     document.getElementById('uniqueCreators').textContent = creatorsSet.size;
 
-    const vehiclesCount = {};
+    // Somente as categorias desejadas
+    const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
     dataset.forEach(d => {
       const v = d.veiculo.toLowerCase();
-      vehiclesCount[v] = (vehiclesCount[v] || 0) + 1;
+      if(vehiclesCount.hasOwnProperty(v)){
+        vehiclesCount[v]++;
+      }
     });
 
-    document.getElementById('totalVehicles').textContent = Object.values(vehiclesCount).reduce((a,b) => a+b,0);
-    document.getElementById('totalMoto').textContent = vehiclesCount['moto'] || 0;
-    document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'] || 0;
-    document.getElementById('totalFiorino').textContent = vehiclesCount['fiorino'] || 0;
-    document.getElementById('totalVan').textContent = vehiclesCount['van'] || 0;
+    const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
+    document.getElementById('totalVehicles').textContent = totalVehicles;
+    document.getElementById('totalMoto').textContent = vehiclesCount['moto'];
+    document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'];
+    document.getElementById('totalFiorino').textContent = vehiclesCount['fiorino'];
+    document.getElementById('totalVan').textContent = vehiclesCount['van'];
 
     const ordersByDriver = {};
     dataset.forEach(d => {
