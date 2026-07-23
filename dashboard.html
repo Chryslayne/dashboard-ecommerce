@@ -131,12 +131,8 @@
 
 <div class="charts">
   <div class="chart-container">
-    <h3>Pedidos por Motorista</h3>
-    <canvas id="ordersByDriver"></canvas>
-  </div>
-  <div class="chart-container">
-    <h3>Distribuição de Rotas (Cluster)</h3>
-    <canvas id="clusterDistribution"></canvas>
+    <h3>Quantidade de Rotas Expedidas por Veículo</h3>
+    <canvas id="routesByVehicle"></canvas>
   </div>
 </div>
 
@@ -159,7 +155,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // URL da API JSON do Google Apps Script publicada
   const jsonUrl = 'https://script.google.com/macros/s/AKfycbyStVzW9PhWx3WBGLhgnjWGhXUcqkEo54DDAYZ5C1K5i_ShuI9YnkctOk7coSst7T_6/exec';
 
   fetch(jsonUrl)
@@ -212,32 +207,25 @@
       document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
       document.getElementById('totalVan').textContent = vehiclesCount.van;
 
-      // Pedidos por Motorista para gráfico
-      const ordersByDriver = {};
+      // Quantidade de rotas por veículo (gráfico novo)
+      const routesByVehicleCount = {};
       dataset.forEach(d => {
-        if(!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
-        ordersByDriver[d.driverName] += d.numberOfOrders;
+        const veh = d.veiculo;
+        if(veh){
+          routesByVehicleCount[veh] = (routesByVehicleCount[veh] || 0) + 1;
+        }
       });
-      const drivers = Object.keys(ordersByDriver);
-      const ordersCount = drivers.map(d => ordersByDriver[d]);
+      const vehicles = Object.keys(routesByVehicleCount);
+      const routesCount = vehicles.map(v => routesByVehicleCount[v]);
 
-      // Distribuição de Clusters para gráfico
-      const clustersCount = {};
-      dataset.forEach(d => {
-        clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
-      });
-      const clusters = Object.keys(clustersCount);
-      const clustersValues = clusters.map(c => clustersCount[c]);
-
-      // Gráfico pedidos por motorista
-      const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
-      new Chart(ctxDriver, {
+      const ctxVehicle = document.getElementById('routesByVehicle').getContext('2d');
+      new Chart(ctxVehicle, {
         type: 'bar',
         data: {
-          labels: drivers,
+          labels: vehicles,
           datasets: [{
-            label: 'Quantidade de Pedidos',
-            data: ordersCount,
+            label: 'Quantidade de Rotas',
+            data: routesCount,
             backgroundColor: '#ff8c00',
           }]
         },
@@ -248,24 +236,6 @@
             x: { ticks: { maxRotation: 45, minRotation: 45 } }
           }
         }
-      });
-
-      // Gráfico distribuição de rotas (clusters)
-      const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
-      new Chart(ctxCluster, {
-        type: 'pie',
-        data: {
-          labels: clusters,
-          datasets: [{
-            data: clustersValues,
-            backgroundColor: [
-              '#ff8c00', '#ffaf33', '#ff9f1a',
-              '#cc7000', '#ff7f00', '#d35400',
-              '#7f4c00', '#e67e22'
-            ],
-          }]
-        },
-        options: { responsive: true }
       });
 
       // Preencher tabela na ordem solicitada
