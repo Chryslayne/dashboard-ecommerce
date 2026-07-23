@@ -39,6 +39,14 @@
     font-size: 1.1em;
     color: #555;
   }
+  .chart-vehicles {
+    max-width: 600px;
+    margin: 0 auto 40px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #ddd;
+  }
   .charts {
     display: flex;
     gap: 40px;
@@ -86,6 +94,9 @@
     .chart-container, .card {
       max-width: 100%;
     }
+    .chart-vehicles {
+      max-width: 100%;
+    }
   }
 </style>
 </head>
@@ -101,13 +112,18 @@
     <p>Motoristas Ativos</p>
   </div>
   <div class="card">
-    <h2 id="uniqueVehicles">0</h2>
+    <h2 id="totalVehicles">0</h2>
     <p>Veículos Utilizados</p>
   </div>
   <div class="card">
     <h2 id="uniqueCreators">0</h2>
     <p>Auxiliares (Creators)</p>
   </div>
+</div>
+
+<div class="chart-vehicles">
+  <h3>Quantidade de Veículos por Categoria</h3>
+  <canvas id="vehiclesByCategory"></canvas>
 </div>
 
 <div class="charts">
@@ -154,6 +170,14 @@
       }, {});
     });
   }
+  // Formatação dos horários no formato "HHMMSSFF" para "HH:MM:SS"
+  function formatTime(timeStr) {
+    if (!timeStr || timeStr.length < 6) return "";
+    const hh = timeStr.substr(0,2);
+    const mm = timeStr.substr(2,2);
+    const ss = timeStr.substr(4,2);
+    return `${hh}:${mm}:${ss}`;
+  }
 
   fetch(csvUrl)
     .then(response => {
@@ -163,23 +187,37 @@
     .then(data => {
       const raw = csvToArray(data);
 
-      // Mapeando para as chaves que o dashboard usa
       const dataset = raw.map(r => ({
         driverName: r['Driver name'] || '',
         driver: r['Driver'] || '',
         veiculo: r['Veiculo'] || '',
         numberOfOrders: parseInt(r['Number of order/TO'] || '0', 10) || 0,
         creator: r['Creator'] || '',
-        createTime: r['Create Time'] || '',
-        driverAssignedTime: r['Driver Assigned Time'] || '',
+        createTime: formatTime(r['Create Time']),
+        driverAssignedTime: formatTime(r['Driver Assigned Time']),
         taskId: r['Task ID'] || '',
         cluster: r['Cluster'] || ''
       }));
 
+      // Total de pedidos
       document.getElementById('totalOrders').textContent = dataset.reduce((acc, d) => acc + d.numberOfOrders, 0);
+
+      // Motoristas únicos
       document.getElementById('uniqueDrivers').textContent = new Set(dataset.map(d => d.driverName)).size;
-      document.getElementById('uniqueVehicles').textContent = new Set(dataset.map(d => d.veiculo)).size;
+
+      // Auxiliares (Creators) únicos
       document.getElementById('uniqueCreators').textContent = new Set(dataset.map(d => d.creator)).size;
+
+      // Quantidade de veículos por categoria
+      const vehiclesCount = {};
+      dataset.forEach(d => {
+        const v = d.veiculo || "Não informado";
+        vehiclesCount[v] = (vehiclesCount[v] || 0) + 1;
+      });
+      const vehicleCategories = Object.keys(vehiclesCount);
+      const vehicleCounts = vehicleCategories.map(v => vehiclesCount[v]);
+      const totalVehicles = vehicleCounts.reduce((a,b) => a + b, 0);
+      document.getElementById('totalVehicles').textContent = totalVehicles;
 
       // Pedidos por motorista
       const ordersByDriver = {};
@@ -199,7 +237,32 @@
       const clusters = Object.keys(clustersCount);
       const clustersValues = clusters.map(c => clustersCount[c]);
 
-      // Gráficos
+      // Gráfico de veículos
+      const ctxVehicle = document.getElementById('vehiclesByCategory').getContext('2d');
+      new Chart(ctxVehicle, {
+        type: 'bar',
+        data: {
+          labels: vehicleCategories,
+          datasets: [{
+            label: 'Quantidade',
+            data: vehicleCounts,
+            backgroundColor: '#8e44ad',
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+
+      // Gráfico de pedidos por motorista
       const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
       new Chart(ctxDriver, {
         type: 'bar',
@@ -220,6 +283,7 @@
         }
       });
 
+      // Gráfico de distribuição das rotas (cluster)
       const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
       new Chart(ctxCluster, {
         type: 'pie',
@@ -237,6 +301,7 @@
         options: { responsive: true }
       });
 
+      // Preencher a tabela detalhada
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
       dataset.forEach(row => {
