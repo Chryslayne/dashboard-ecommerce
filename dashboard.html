@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dashboard E-commerce - Google Sheets</title>
 <style>
+  /* Mantive o estilo preto e verde neon */
   body {
     background-color: #000;
     color: #39ff14;
@@ -206,7 +207,7 @@
     const creatorsSet = new Set(dataset.map(d => d.creator));
     document.getElementById('uniqueCreators').textContent = creatorsSet.size;
 
-    // Somente as categorias desejadas
+    // Contagem apenas para as categorias que você pediu
     const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
     dataset.forEach(d => {
       const v = d.veiculo.toLowerCase();
@@ -216,11 +217,11 @@
     });
 
     const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
-    document.getElementById('Vehicles').textContent = totalVehicles;
-    document.getElementById('Moto').textContent = vehiclesCount['moto'];
-    document.getElementById('Passeio').textContent = vehiclesCount['passeio'];
-    document.getElementById('Fiorino').textContent = vehiclesCount['fiorino'];
-    document.getElementById('Van').textContent = vehiclesCount['van'];
+    document.getElementById('totalVehicles').textContent = totalVehicles;
+    document.getElementById('totalMoto').textContent = vehiclesCount['moto'];
+    document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'];
+    document.getElementById('totalFiorino').textContent = vehiclesCount['fiorino'];
+    document.getElementById('totalVan').textContent = vehiclesCount['van'];
 
     const ordersByDriver = {};
     dataset.forEach(d => {
