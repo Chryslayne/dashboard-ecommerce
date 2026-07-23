@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard E-commerce - Dados JSON API</title>
+<title>Dashboard E-commerce - Google Sheets JSON API</title>
 <style>
   body {
     background-color: #000;
@@ -93,7 +93,7 @@
 </style>
 </head>
 <body>
-<h1>Dashboard E-commerce - Dados JSON API</h1>
+<h1>Dashboard E-commerce - Google Sheets JSON API</h1>
 <div class="cards">
   <div class="card">
     <h2 id="totalOrders">0</h2>
@@ -159,17 +159,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-
-fetch(jsonUrl)
-  .then(response => response.json())
-  .then(data => {
-    // aqui data é o array de objetos JSON
-    // continue o processamento normal
-  })
+  // URL da API JSON do Google Apps Script publicada
+  const jsonUrl = 'https://script.google.com/macros/s/AKfycbyStVzW9PhWx3WBGLhgnjWGhXUcqkEo54DDAYZ5C1K5i_ShuI9YnkctOk7coSst7T_6/exec';
 
   fetch(jsonUrl)
     .then(response => {
-      if (!response.ok) throw new Error('Erro ao buscar dados: ' + response.status);
+      if(!response.ok) throw new Error('Erro ao buscar dados: ' + response.status);
       return response.json();
     })
     .then(raw => {
@@ -185,15 +180,21 @@ fetch(jsonUrl)
         numberOfOrders: parseInt((r['Number of assigned orders/TO'] || '0').replace(/[^\d]/g,''), 10) || 0
       }));
 
-      const totalOrders = dataset.reduce((acc,d) => acc + d.numberOfOrders, 0);
-      const uniqueDrivers = new Set(dataset.map(d => d.driverName)).size;
-      const creatorsSet = new Set(dataset.map(d => d.creator));
+      // Total de pedidos
+      const totalOrders = dataset.reduce((acc, d) => acc + d.numberOfOrders, 0);
 
-      const vehiclesCount = { van:0, fiorino:0, moto:0, passeio:0 };
+      // Motoristas únicos
+      const uniqueDrivers = new Set(dataset.map(d => d.driverName)).size;
+
+      // Auxiliares (Creators) únicos
+      const uniqueCreators = new Set(dataset.map(d => d.creator)).size;
+
+      // Veículos nas categorias específicas
+      const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
       dataset.forEach(d => {
         const v = d.veiculo.toLowerCase();
-        for (const key in vehiclesCount) {
-          if (v.includes(key)) {
+        for(const key in vehiclesCount){
+          if(v.includes(key)){
             vehiclesCount[key]++;
             break;
           }
@@ -201,23 +202,26 @@ fetch(jsonUrl)
       });
       const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
 
+      // Atualização dos KPIs
       document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
       document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
-      document.getElementById('uniqueCreators').textContent = creatorsSet.size;
+      document.getElementById('uniqueCreators').textContent = uniqueCreators;
       document.getElementById('totalVehicles').textContent = totalVehicles;
       document.getElementById('totalMoto').textContent = vehiclesCount.moto;
       document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
       document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
       document.getElementById('totalVan').textContent = vehiclesCount.van;
 
+      // Pedidos por Motorista para gráfico
       const ordersByDriver = {};
       dataset.forEach(d => {
-        if (!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
+        if(!ordersByDriver[d.driverName]) ordersByDriver[d.driverName] = 0;
         ordersByDriver[d.driverName] += d.numberOfOrders;
       });
       const drivers = Object.keys(ordersByDriver);
       const ordersCount = drivers.map(d => ordersByDriver[d]);
 
+      // Distribuição de Clusters para gráfico
       const clustersCount = {};
       dataset.forEach(d => {
         clustersCount[d.cluster] = (clustersCount[d.cluster] || 0) + 1;
@@ -225,6 +229,7 @@ fetch(jsonUrl)
       const clusters = Object.keys(clustersCount);
       const clustersValues = clusters.map(c => clustersCount[c]);
 
+      // Gráfico pedidos por motorista
       const ctxDriver = document.getElementById('ordersByDriver').getContext('2d');
       new Chart(ctxDriver, {
         type: 'bar',
@@ -245,6 +250,7 @@ fetch(jsonUrl)
         }
       });
 
+      // Gráfico distribuição de rotas (clusters)
       const ctxCluster = document.getElementById('clusterDistribution').getContext('2d');
       new Chart(ctxCluster, {
         type: 'pie',
@@ -262,6 +268,7 @@ fetch(jsonUrl)
         options: { responsive: true }
       });
 
+      // Preencher tabela na ordem solicitada
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
       dataset.forEach(row => {
