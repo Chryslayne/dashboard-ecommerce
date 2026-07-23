@@ -159,7 +159,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const jsonUrl = 'https://script.google.com/macros/s/AKfycbyStVzW9PhWx3WBGLhgnjWGhXUcqkEo54DDAYZ5C1K5i_ShuI9YnkctOk7coSst7T_6/exec';
+
+fetch(jsonUrl)
+  .then(response => response.json())
+  .then(data => {
+    // aqui data é o array de objetos JSON
+    // continue o processamento normal
+  })
 
   fetch(jsonUrl)
     .then(response => {
