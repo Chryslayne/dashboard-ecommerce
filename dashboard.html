@@ -216,11 +216,11 @@
     });
 
     const totalVehicles = Object.values(vehiclesCount).reduce((a,b) => a+b, 0);
-    document.getElementById('totalVehicles').textContent = totalVehicles;
-    document.getElementById('totalMoto').textContent = vehiclesCount['moto'];
-    document.getElementById('totalPasseio').textContent = vehiclesCount['passeio'];
-    document.getElementById('totalFiorino').textContent = vehiclesCount['fiorino'];
-    document.getElementById('totalVan').textContent = vehiclesCount['van'];
+    document.getElementById('Vehicles').textContent = totalVehicles;
+    document.getElementById('Moto').textContent = vehiclesCount['moto'];
+    document.getElementById('Passeio').textContent = vehiclesCount['passeio'];
+    document.getElementById('Fiorino').textContent = vehiclesCount['fiorino'];
+    document.getElementById('Van').textContent = vehiclesCount['van'];
 
     const ordersByDriver = {};
     dataset.forEach(d => {
