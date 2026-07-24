@@ -221,6 +221,8 @@
     <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
     <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
     <div class="card"><h2 id="uniqueCreators">0</h2><p>Creadores Ativos</p></div>
+
+>>>>>>> f48d9ed0945f757c3fde0fe355946a19063cc916
     <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
     <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
     <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
@@ -557,6 +559,7 @@
       if (el) el.textContent = text;
     };
 
+>>>>>>> f48d9ed0945f757c3fde0fe355946a19063cc916
     const renderDashboard = dataset => {
       const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
       const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
@@ -579,6 +582,7 @@
       setTextContentSafe('totalPasseio', vehiclesCount.passeio);
       setTextContentSafe('totalFiorino', vehiclesCount.fiorino);
       setTextContentSafe('totalVan', vehiclesCount.van);
+>>>>>>> f48d9ed0945f757c3fde0fe355946a19063cc916
 
       const routesByVehicleCount = {};
       dataset.forEach(item => {
