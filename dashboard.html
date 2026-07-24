@@ -1,1025 +1,1032 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <title>Dashboard E-commerce - Google Sheets JSON API</title>
-  <style>
-    html {
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-    *, *::before, *::after {
-      box-sizing: inherit;
-    }
-    body {
-      background-color: #000;
-      color: #ff8c00;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0 auto;
-      max-width: 1680px;
-      padding: 16px 24px 24px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #ff8c00;
-    }
-    .toolbar {
-      display: grid;
-      grid-template-columns: auto auto auto auto auto;
-      align-items: center;
-      gap: 12px;
-      justify-content: center;
-      margin-bottom: 24px;
-    }
-    .toolbar label {
-      color: #ffa500;
-      font-weight: 600;
-    }
-    .toolbar input,
-    .toolbar button {
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid #ff8c00;
-      background: #111;
-      color: #fff;
-    }
-    /* calendar icon inside inputs */
-    #dateFilter, #dateFilter2, #tableDateFrom, #tableDateTo {
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='4' width='18' height='18' rx='2' ry='2' fill='%23111111' stroke='%23ffb347' stroke-width='1.5'/><path d='M7 2v4M17 2v4' stroke='%23ffb347' stroke-width='1.5' stroke-linecap='round'/><path d='M3 10h18' stroke='%23ffb347' stroke-width='1.2' stroke-linecap='round'/></svg>");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      background-size: 20px 20px;
-      padding-right: 40px;
-    }
-    .toolbar input {
-      min-width: 150px;
-      color-scheme: dark;
-    }
-    .toolbar button {
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-    .toolbar button:hover {
-      background: #1f1406;
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 18px;
-      margin-bottom: 30px;
-    }
-    .card {
-      background: rgba(17, 17, 17, 0.92);
-      border: 1px solid rgba(255, 140, 0, 0.2);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      border-radius: 14px;
-      padding: 24px 20px;
-      text-align: center;
-      color: #ff8c00;
-      min-height: 160px;
-    }
-    .card h2 { font-size: 2.2em; margin: 0 0 10px; letter-spacing: -0.03em; }
-    .card p { font-size: 0.95em; color: #f5a623; margin: 0; }
-    .charts {
-      display: flex;
-      gap: 40px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 40px;
-    }
-    .chart-container {
-      background: rgba(17, 17, 17, 0.96);
-      border: 1px solid rgba(255, 140, 0, 0.16);
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-      padding: 22px;
-      flex: 1 1 420px;
-      min-width: 420px;
-      max-width: 720px;
-    }
-    .chart-summary {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 12px;
-      gap: 10px;
-      color: #ffb347;
-      font-size: 0.95em;
-    }
-    .chart-summary strong {
-      display: block;
-      font-size: 1.75em;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-    }
-    .chart-container h3 {
-      margin: 0 0 12px;
-      text-align: center;
-      color: #ffb347;
-      font-size: 1.05em;
-    }
-    canvas {
-      max-width: 100%;
-      display: block;
-      height: 420px !important;
-    }
-    .chart-container h3 {
-      margin-bottom: 18px;
-    }
-    .table-wrapper { overflow-x: auto; }
-    .table-filters {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-      align-items: center;
-      padding: 12px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, rgba(255, 140, 0, 0.12), rgba(255, 140, 0, 0.05));
-      border: 1px solid rgba(255, 140, 0, 0.3);
-      box-shadow: 0 0 10px rgba(255, 140, 0, 0.12);
-    }
-    .table-filters-title {
-      color: #ffb347;
-      font-weight: 700;
-      margin-right: 4px;
-      font-size: 0.95em;
-    }
-    .table-filters input,
-    .table-filters select,
-    .table-filters button {
-      padding: 8px 12px;
-      border-radius: 6px;
-      border: 1px solid #ff8c00;
-      background: #111;
-      color: #fff;
-      min-width: 160px;
-    }
-    .table-filters input[type="date"] {
-      min-width: 140px;
-      display: inline-block;
-    }
-    .table-filters button {
-      cursor: pointer;
-    }
-    .table-filters button:hover {
-      background: #1f1406;
-    }
-    .table-summary {
-      color: #ffb347;
-      font-size: 0.95em;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #111;
-      box-shadow: 0 0 15px #cc7000;
-      border-radius: 8px;
-      overflow: hidden;
-      color: #ff8c00;
-    }
-    thead { background: #663300; color: #ffa500; }
-    th, td {
-      padding: 12px 15px;
-      border: 1px solid #ff8c00;
-      text-align: left;
-      font-size: 0.9em;
-      white-space: nowrap;
-    }
-    tbody tr:nth-child(even) { background: #331a00; }
-    .loading {
-      text-align: center;
-      margin-top: 40px;
-      color: #ffa500;
-    }
-    @media (max-width: 1100px) {
-      .charts, .cards { flex-direction: column; align-items: center; }
-      .chart-container, .card { max-width: 100%; }
-    }
-  </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-</head>
-<body>
-  <h1>Fechamente Fleet</h1>
-
-  <div class="toolbar">
-    <label for="dateFilter">Período</label>
-    <input type="text" id="dateFilter" placeholder="dd/mm/yyyy" value="22/07/2026" />
-    <input type="text" id="dateFilter2" placeholder="dd/mm/yyyy" value="23/07/2026" />
-    <button id="applyDateFilter">Aplicar</button>
-    <button id="clearDateFilter">Limpar</button>
-  </div>
-  <div id="periodLabel" style="text-align:center;color:#ffb347;margin-bottom:12px;font-weight:700;"></div>
-
-  <div class="cards">
-    <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
-    <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
-    <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
-    <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
-    <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
-    <div class="card"><h2 id="totalVan">0</h2><p>Van</p></div>
-  </div>
-
-  <div class="charts">
-    <div class="chart-container">
-      <h3>Quantidade de Rotas Expedidas por Veículo</h3>
-      <canvas id="routesByVehicle"></canvas>
-    </div>
-    <div class="chart-container">
-      <h3>Série Temporal (por dia)</h3>
-      <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px;">
-        <button id="comparePrevWeek" type="button" style="padding:6px 10px;border-radius:6px;">Comparar semana anterior</button>
-      </div>
-      <canvas id="timeSeriesChart"></canvas>
-    </div>
-  </div>
-
-  <div class="charts">
-    <div class="chart-container">
-      <div class="chart-summary">
-        <span>Total veículos</span>
-        <strong id="hourlyVehiclesTotal">0</strong>
-      </div>
-      <h3>Veículos expedidos por hora</h3>
-      <canvas id="hourlyVehiclesChart"></canvas>
-    </div>
-    <div class="chart-container">
-      <div class="chart-summary">
-        <span>Total pacotes</span>
-        <strong id="hourlyPackagesTotal">0</strong>
-      </div>
-      <h3>Pacotes expedidos por hora</h3>
-      <canvas id="hourlyPackagesChart"></canvas>
-    </div>
-  </div>
-
-  <h3>Detalhes dos Pedidos</h3>
-  <div class="table-summary" id="tableSummary">Mostrando todos os registros</div>
-  <div class="table-filters">
-    <span class="table-filters-title">Filtros da tabela</span>
-    <input type="text" id="tableSearch" placeholder="Buscar por task, motorista ou veículo" />
-    <label for="tableDateFrom" style="color:#ffb347; font-size:0.9em;">De</label>
-    <input type="text" id="tableDateFrom" placeholder="dd/mm/yyyy" />
-    <label for="tableDateTo" style="color:#ffb347; font-size:0.9em;">Até</label>
-    <input type="text" id="tableDateTo" placeholder="dd/mm/yyyy" />
-    <select id="tableVehicleFilter">
-      <option value="">Todos os veículos</option>
-    </select>
-    <button id="applyTableFilters" type="button">Filtrar</button>
-    <button id="clearTableFilters" type="button">Limpar</button>
-  </div>
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Task ID</th>
-          <th>Driver</th>
-          <th>Driver Name</th>
-          <th>Veículo</th>
-          <th>Cluster</th>
-          <th>Hora de Início</th>
-          <th>Hora de Fim</th>
-          <th>Creator</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <p class="loading" id="loadingText">Carregando dados...</p>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script>
-    if (window.Chart && window.ChartDataLabels) {
-      Chart.register(ChartDataLabels);
-    }
-    // initialize flatpickr on top date inputs with dd/mm/yyyy
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        flatpickr('#dateFilter', { dateFormat: 'd/m/Y', allowInput: true });
-        flatpickr('#dateFilter2', { dateFormat: 'd/m/Y', allowInput: true });
-        flatpickr('#tableDateFrom', { dateFormat: 'd/m/Y', allowInput: true });
-        flatpickr('#tableDateTo', { dateFormat: 'd/m/Y', allowInput: true });
-      } catch (e) {
-        console.warn('flatpickr not loaded', e);
+  <!DOCTYPE html>
+  <html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <title>Dashboard E-commerce - Google Sheets JSON API</title>
+    <style>
+      html {
+        box-sizing: border-box;
+        font-size: 16px;
       }
-    });
-  </script>
-  <script>
-    // Public CSV URL provided by the user (published Google Sheets)
-    const spreadsheetId = '13ItptD7JUCh38h4TwWkdPTjX4Jr8x7mnp_deWXjk0Ys';
-    const spreadsheetGid = '0';
-    const spreadsheetCsvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${spreadsheetGid}`;
-    const DATA_REFRESH_MS = 60000;
+      *, *::before, *::after {
+        box-sizing: inherit;
+      }
+      body {
+        background-color: #000;
+        color: #ff8c00;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0 auto;
+        max-width: 1680px;
+        padding: 16px 24px 24px;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #ff8c00;
+      }
+      .toolbar {
+        display: grid;
+        grid-template-columns: auto auto auto auto auto;
+        align-items: center;
+        gap: 12px;
+        justify-content: center;
+        margin-bottom: 24px;
+      }
+      .toolbar label {
+        color: #ffa500;
+        font-weight: 600;
+      }
+      .toolbar input,
+      .toolbar button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ff8c00;
+        background: #111;
+        color: #fff;
+      }
+      /* calendar icon inside inputs */
+      #dateFilter, #dateFilter2, #tableDateFrom, #tableDateTo {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='4' width='18' height='18' rx='2' ry='2' fill='%23111111' stroke='%23ffb347' stroke-width='1.5'/><path d='M7 2v4M17 2v4' stroke='%23ffb347' stroke-width='1.5' stroke-linecap='round'/><path d='M3 10h18' stroke='%23ffb347' stroke-width='1.2' stroke-linecap='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 20px 20px;
+        padding-right: 40px;
+      }
+      .toolbar input {
+        min-width: 150px;
+        color-scheme: dark;
+      }
+      .toolbar button {
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .toolbar button:hover {
+        background: #1f1406;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 30px;
+      }
+      .card {
+        background: rgba(17, 17, 17, 0.92);
+        border: 1px solid rgba(255, 140, 0, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        border-radius: 14px;
+        padding: 24px 20px;
+        text-align: center;
+        color: #ff8c00;
+        min-height: 160px;
+      }
+      .card h2 { font-size: 2.2em; margin: 0 0 10px; letter-spacing: -0.03em; }
+      .card p { font-size: 0.95em; color: #f5a623; margin: 0; }
+      .charts {
+        display: flex;
+        gap: 40px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 40px;
+      }
+      .chart-container {
+        background: rgba(17, 17, 17, 0.96);
+        border: 1px solid rgba(255, 140, 0, 0.16);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        padding: 22px;
+        flex: 1 1 420px;
+        min-width: 420px;
+        max-width: 720px;
+      }
+      .chart-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 12px;
+        gap: 10px;
+        color: #ffb347;
+        font-size: 0.95em;
+      }
+      .chart-summary strong {
+        display: block;
+        font-size: 1.75em;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+      }
+      .chart-container h3 {
+        margin: 0 0 12px;
+        text-align: center;
+        color: #ffb347;
+        font-size: 1.05em;
+      }
+      canvas {
+        max-width: 100%;
+        display: block;
+        height: 420px !important;
+      }
+      .chart-container h3 {
+        margin-bottom: 18px;
+      }
+      .table-wrapper { overflow-x: auto; }
+      .table-filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(255, 140, 0, 0.12), rgba(255, 140, 0, 0.05));
+        border: 1px solid rgba(255, 140, 0, 0.3);
+        box-shadow: 0 0 10px rgba(255, 140, 0, 0.12);
+      }
+      .table-filters-title {
+        color: #ffb347;
+        font-weight: 700;
+        margin-right: 4px;
+        font-size: 0.95em;
+      }
+      .table-filters input,
+      .table-filters select,
+      .table-filters button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ff8c00;
+        background: #111;
+        color: #fff;
+        min-width: 160px;
+      }
+      .table-filters input[type="date"] {
+        min-width: 140px;
+        display: inline-block;
+      }
+      .table-filters button {
+        cursor: pointer;
+      }
+      .table-filters button:hover {
+        background: #1f1406;
+      }
+      .table-summary {
+        color: #ffb347;
+        font-size: 0.95em;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #111;
+        box-shadow: 0 0 15px #cc7000;
+        border-radius: 8px;
+        overflow: hidden;
+        color: #ff8c00;
+      }
+      thead { background: #663300; color: #ffa500; }
+      th, td {
+        padding: 12px 15px;
+        border: 1px solid #ff8c00;
+        text-align: left;
+        font-size: 0.9em;
+        white-space: nowrap;
+      }
+      tbody tr:nth-child(even) { background: #331a00; }
+      .loading {
+        text-align: center;
+        margin-top: 40px;
+        color: #ffa500;
+      }
+      @media (max-width: 1100px) {
+        .charts, .cards { flex-direction: column; align-items: center; }
+        .chart-container, .card { max-width: 100%; }
+      }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  </head>
+  <body>
+    <h1>Fechamente Fleet</h1>
 
-    const buildSpreadsheetCsvCandidates = () => {
-      const cacheBust = `ts=${Date.now()}`;
-      const separator = spreadsheetCsvUrl.includes('?') ? '&' : '?';
-      const freshCsvUrl = `${spreadsheetCsvUrl}${separator}${cacheBust}`;
-      return [
-        freshCsvUrl,
-        `https://r.jina.ai/http/${encodeURIComponent(freshCsvUrl)}`,
-        `https://corsproxy.io/?${encodeURIComponent(freshCsvUrl)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(freshCsvUrl)}`
-      ];
-    };
+    <div class="toolbar">
+      <label for="dateFilter">Período</label>
+      <input type="text" id="dateFilter" placeholder="dd/mm/yyyy" value="22/07/2026" />
+      <input type="text" id="dateFilter2" placeholder="dd/mm/yyyy" value="23/07/2026" />
+      <button id="applyDateFilter">Aplicar</button>
+      <button id="clearDateFilter">Limpar</button>
+    </div>
+    <div id="periodLabel" style="text-align:center;color:#ffb347;margin-bottom:12px;font-weight:700;"></div>
 
-    const normalize = value => String(value || '').trim();
-    const isoToBr = iso => {
-      if (!iso) return '';
-      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-      return iso;
-    };
-    const firstValue = (obj, keys) => {
-      for (const key of keys) {
-        if (obj[key] !== undefined && obj[key] !== null) {
-          const value = normalize(obj[key]);
-          if (value !== '') return value;
+    <div class="cards">
+      <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
+      <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
+      <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
+      <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
+      <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
+      <div class="card"><h2 id="totalVan">0</h2><p>Van</p></div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-container">
+        <h3>Quantidade de Rotas Expedidas por Veículo</h3>
+        <canvas id="routesByVehicle"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3>Série Temporal (por dia)</h3>
+        <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px;">
+          <button id="comparePrevWeek" type="button" style="padding:6px 10px;border-radius:6px;">Comparar semana anterior</button>
+        </div>
+        <canvas id="timeSeriesChart"></canvas>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-container">
+        <div class="chart-summary">
+          <span>Total veículos</span>
+          <strong id="hourlyVehiclesTotal">0</strong>
+        </div>
+        <h3>Veículos expedidos por hora</h3>
+        <canvas id="hourlyVehiclesChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-summary">
+          <span>Total pacotes</span>
+          <strong id="hourlyPackagesTotal">0</strong>
+        </div>
+        <h3>Pacotes expedidos por hora</h3>
+        <canvas id="hourlyPackagesChart"></canvas>
+      </div>
+    </div>
+
+    <h3>Detalhes dos Pedidos</h3>
+    <div class="table-summary" id="tableSummary">Mostrando todos os registros</div>
+    <div class="table-filters">
+      <span class="table-filters-title">Filtros da tabela</span>
+      <input type="text" id="tableSearch" placeholder="Buscar por task, motorista ou veículo" />
+      <label for="tableDateFrom" style="color:#ffb347; font-size:0.9em;">De</label>
+      <input type="text" id="tableDateFrom" placeholder="dd/mm/yyyy" />
+      <label for="tableDateTo" style="color:#ffb347; font-size:0.9em;">Até</label>
+      <input type="text" id="tableDateTo" placeholder="dd/mm/yyyy" />
+      <select id="tableVehicleFilter">
+        <option value="">Todos os veículos</option>
+      </select>
+      <button id="applyTableFilters" type="button">Filtrar</button>
+      <button id="clearTableFilters" type="button">Limpar</button>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Task ID</th>
+            <th>Driver</th>
+            <th>Driver Name</th>
+            <th>Veículo</th>
+            <th>Cluster</th>
+            <th>Hora de Início</th>
+            <th>Hora de Fim</th>
+            <th>Creator</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <p class="loading" id="loadingText">Carregando dados...</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+      if (window.Chart && window.ChartDataLabels) {
+        Chart.register(ChartDataLabels);
+      }
+      // initialize flatpickr on top date inputs with dd/mm/yyyy
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          flatpickr('#dateFilter', { dateFormat: 'd/m/Y', allowInput: true });
+          flatpickr('#dateFilter2', { dateFormat: 'd/m/Y', allowInput: true });
+          flatpickr('#tableDateFrom', { dateFormat: 'd/m/Y', allowInput: true });
+          flatpickr('#tableDateTo', { dateFormat: 'd/m/Y', allowInput: true });
+        } catch (e) {
+          console.warn('flatpickr not loaded', e);
         }
-      }
-      return '';
-    };
-
-    const parseDateKey = value => {
-      const clean = normalize(value);
-      if (!clean) return '';
-
-      const isoMatch = clean.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
-      if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-
-      const brMatch = clean.match(/(\d{2})[/-](\d{2})[/-](\d{4})/);
-      if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
-
-      const date = new Date(clean);
-      if (!Number.isNaN(date.getTime())) {
-        return date.toISOString().slice(0, 10);
-      }
-
-      return '';
-    };
-
-    let allDataset = [];
-    let currentDataset = [];
-
-    const getFilterState = () => ({
-      topDate: parseInputToIso(normalize(document.getElementById('dateFilter').value)),
-      topDate2: parseInputToIso(normalize(document.getElementById('dateFilter2')?.value)),
-      tableSearch: normalize(document.getElementById('tableSearch').value),
-      tableDateFrom: parseInputToIso(normalize(document.getElementById('tableDateFrom').value)),
-      tableDateTo: parseInputToIso(normalize(document.getElementById('tableDateTo').value)),
-      vehicle: normalize(document.getElementById('tableVehicleFilter').value)
-    });
-
-    const syncUrlWithFilters = state => {
-      const params = new URLSearchParams();
-      Object.entries(state).forEach(([key, value]) => {
-        if (value) params.set(key, value);
       });
-      const query = params.toString();
-      const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
-      window.history.replaceState({}, '', nextUrl);
-    };
+    </script>
+    <script>
+      // Public CSV URL provided by the user (published Google Sheets)
+      const spreadsheetId = '13ItptD7JUCh38h4TwWkdPTjX4Jr8x7mnp_deWXjk0Ys';
+      const spreadsheetGid = '0';
+      const spreadsheetCsvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${spreadsheetGid}`;
+      const DATA_REFRESH_MS = 60000;
 
-    const applyFilterStateToInputs = state => {
-      // show dates as dd/mm/yyyy for user-friendly display
-      document.getElementById('dateFilter').value = isoToBr(state.topDate) || '';
-      if (document.getElementById('dateFilter2')) document.getElementById('dateFilter2').value = isoToBr(state.topDate2) || '';
-      document.getElementById('tableSearch').value = state.tableSearch || '';
-      document.getElementById('tableDateFrom').value = isoToBr(state.tableDateFrom) || '';
-      document.getElementById('tableDateTo').value = isoToBr(state.tableDateTo) || '';
-      document.getElementById('tableVehicleFilter').value = state.vehicle || '';
-    };
-
-    const loadFilterStateFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-      return {
-        topDate: normalize(params.get('topDate')),
-        topDate2: normalize(params.get('topDate2')),
-        tableSearch: normalize(params.get('tableSearch')),
-        tableDateFrom: normalize(params.get('tableDateFrom')),
-        tableDateTo: normalize(params.get('tableDateTo')),
-        vehicle: normalize(params.get('vehicle'))
+      const buildSpreadsheetCsvCandidates = () => {
+        const cacheBust = `ts=${Date.now()}`;
+        const separator = spreadsheetCsvUrl.includes('?') ? '&' : '?';
+        const freshCsvUrl = `${spreadsheetCsvUrl}${separator}${cacheBust}`;
+        return [
+          freshCsvUrl,
+          `https://r.jina.ai/http/${encodeURIComponent(freshCsvUrl)}`,
+          `https://corsproxy.io/?${encodeURIComponent(freshCsvUrl)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(freshCsvUrl)}`
+        ];
       };
-    };
 
-    const parseCsv = text => {
-      const rows = [];
-      let row = [];
-      let field = '';
-      let inQuotes = false;
-
-      for (let i = 0; i < text.length; i += 1) {
-        const char = text[i];
-        if (char === '"') {
-          if (inQuotes && text[i + 1] === '"') {
-            field += '"';
-            i += 1;
-          } else {
-            inQuotes = !inQuotes;
+      const normalize = value => String(value || '').trim();
+      const isoToBr = iso => {
+        if (!iso) return '';
+        const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+        return iso;
+      };
+      const firstValue = (obj, keys) => {
+        for (const key of keys) {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            const value = normalize(obj[key]);
+            if (value !== '') return value;
           }
-        } else if (char === ',' && !inQuotes) {
-          row.push(field);
-          field = '';
-        } else if ((char === '\n' || char === '\r') && !inQuotes) {
-          if (char === '\r' && text[i + 1] === '\n') i += 1;
+        }
+        return '';
+      };
+
+      const parseDateKey = value => {
+        const clean = normalize(value);
+        if (!clean) return '';
+
+        const isoMatch = clean.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
+        if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+        const brMatch = clean.match(/(\d{2})[/-](\d{2})[/-](\d{4})/);
+        if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+
+        const date = new Date(clean);
+        if (!Number.isNaN(date.getTime())) {
+          return date.toISOString().slice(0, 10);
+        }
+
+        return '';
+      };
+
+      let allDataset = [];
+      let currentDataset = [];
+
+      const getFilterState = () => ({
+        topDate: parseInputToIso(normalize(document.getElementById('dateFilter').value)),
+        topDate2: parseInputToIso(normalize(document.getElementById('dateFilter2')?.value)),
+        tableSearch: normalize(document.getElementById('tableSearch').value),
+        tableDateFrom: parseInputToIso(normalize(document.getElementById('tableDateFrom').value)),
+        tableDateTo: parseInputToIso(normalize(document.getElementById('tableDateTo').value)),
+        vehicle: normalize(document.getElementById('tableVehicleFilter').value)
+      });
+
+      const syncUrlWithFilters = state => {
+        const params = new URLSearchParams();
+        Object.entries(state).forEach(([key, value]) => {
+          if (value) params.set(key, value);
+        });
+        const query = params.toString();
+        const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+        window.history.replaceState({}, '', nextUrl);
+      };
+
+      const applyFilterStateToInputs = state => {
+        // show dates as dd/mm/yyyy for user-friendly display
+        document.getElementById('dateFilter').value = isoToBr(state.topDate) || '';
+        if (document.getElementById('dateFilter2')) document.getElementById('dateFilter2').value = isoToBr(state.topDate2) || '';
+        document.getElementById('tableSearch').value = state.tableSearch || '';
+        document.getElementById('tableDateFrom').value = isoToBr(state.tableDateFrom) || '';
+        document.getElementById('tableDateTo').value = isoToBr(state.tableDateTo) || '';
+        document.getElementById('tableVehicleFilter').value = state.vehicle || '';
+      };
+
+      const loadFilterStateFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        return {
+          topDate: normalize(params.get('topDate')),
+          topDate2: normalize(params.get('topDate2')),
+          tableSearch: normalize(params.get('tableSearch')),
+          tableDateFrom: normalize(params.get('tableDateFrom')),
+          tableDateTo: normalize(params.get('tableDateTo')),
+          vehicle: normalize(params.get('vehicle'))
+        };
+      };
+
+      const parseCsv = text => {
+        const rows = [];
+        let row = [];
+        let field = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i += 1) {
+          const char = text[i];
+          if (char === '"') {
+            if (inQuotes && text[i + 1] === '"') {
+              field += '"';
+              i += 1;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === ',' && !inQuotes) {
+            row.push(field);
+            field = '';
+          } else if ((char === '\n' || char === '\r') && !inQuotes) {
+            if (char === '\r' && text[i + 1] === '\n') i += 1;
+            row.push(field);
+            if (row.some(cell => normalize(cell) !== '')) rows.push(row);
+            row = [];
+            field = '';
+          } else {
+            field += char;
+          }
+        }
+
+        if (field.length > 0 || row.length > 0) {
           row.push(field);
           if (row.some(cell => normalize(cell) !== '')) rows.push(row);
-          row = [];
-          field = '';
-        } else {
-          field += char;
         }
-      }
 
-      if (field.length > 0 || row.length > 0) {
-        row.push(field);
-        if (row.some(cell => normalize(cell) !== '')) rows.push(row);
-      }
+        if (rows.length === 0) return [];
 
-      if (rows.length === 0) return [];
-
-      const headers = rows[0].map(header => normalize(header));
-      return rows.slice(1)
-        .filter(values => values.some(value => normalize(value) !== ''))
-        .map(values => {
-          const item = {};
-          headers.forEach((header, index) => {
-            item[header] = values[index] ?? '';
+        const headers = rows[0].map(header => normalize(header));
+        return rows.slice(1)
+          .filter(values => values.some(value => normalize(value) !== ''))
+          .map(values => {
+            const item = {};
+            headers.forEach((header, index) => {
+              item[header] = values[index] ?? '';
+            });
+            return item;
           });
-          return item;
+      };
+
+      const parseInputToIso = s => {
+        const v = normalize(s);
+        if (!v) return '';
+        // If already ISO
+        const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (iso) return v;
+        // match dd/mm/yyyy or dd-mm-yyyy
+        const br = v.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+        if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+        // try Date parse
+        const d = new Date(v);
+        if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0,10);
+        return '';
+      };
+
+      const loadSpreadsheetRows = async () => {
+        for (const url of buildSpreadsheetCsvCandidates()) {
+          try {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) continue;
+
+            const text = await response.text();
+            if (!text || text.includes('<html') || text.includes('Sign in')) continue;
+
+            const rows = parseCsv(text);
+            if (rows.length > 0) return rows;
+          } catch (error) {
+            console.warn('Falha ao tentar ler a planilha em', url, error);
+          }
+        }
+
+        throw new Error('Não foi possível carregar a planilha do Google Sheets.');
+      };
+
+      const buildDataset = rows => rows.map(row => ({
+        taskId: firstValue(row, ['Task ID', 'taskId', 'Task Id']),
+        driver: firstValue(row, ['Driver', 'driver']),
+        driverName: firstValue(row, ['Driver name', 'driverName', 'Driver Name']),
+        veiculo: firstValue(row, ['Veiculo', 'veiculo', 'Vehicle', 'Veículo']),
+        cluster: firstValue(row, ['Cluster', 'cluster']),
+        createTime: firstValue(row, ['Create Time', 'createTime', 'Create time']),
+        driverAssignedTime: firstValue(row, ['Driver Assigned Time', 'driverAssignedTime', 'Driver assigned time']),
+        creator: firstValue(row, ['Creator', 'creator']).toLowerCase(),
+        rowDate: parseDateKey(firstValue(row, ['Delivery Date', 'Date', 'date', 'Data', 'Create Date', 'createDate', 'Data de criação'])) || parseDateKey(firstValue(row, ['Create Time', 'createTime', 'Create time'])),
+        numberOfOrders: parseInt(
+          normalize(firstValue(row, [
+            'Number of assigned orders/TO',
+            'Number of Assigned Orders/TO',
+            'numberOfOrders',
+            'assigned orders'
+          ])).replace(/[^\d]/g, ''),
+          10
+        ) || 0
+      }));
+
+      const getTableFilteredDataset = baseDataset => {
+        const searchTerm = normalize(document.getElementById('tableSearch').value).toLowerCase();
+        const vehicleFilter = normalize(document.getElementById('tableVehicleFilter').value).toLowerCase();
+        const dateFrom = parseInputToIso(normalize(document.getElementById('tableDateFrom').value));
+        const dateTo = parseInputToIso(normalize(document.getElementById('tableDateTo').value));
+
+        return baseDataset.filter(item => {
+          const haystack = `${item.taskId} ${item.driver} ${item.driverName} ${item.veiculo} ${item.cluster} ${item.creator}`.toLowerCase();
+          const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+          const matchesVehicle = !vehicleFilter || normalize(item.veiculo).toLowerCase().includes(vehicleFilter);
+
+          let matchesDate = true;
+          if (dateFrom && item.rowDate) {
+            matchesDate = matchesDate && item.rowDate >= dateFrom;
+          }
+          if (dateTo && item.rowDate) {
+            matchesDate = matchesDate && item.rowDate <= dateTo;
+          }
+
+          return matchesSearch && matchesVehicle && matchesDate;
         });
-    };
+      };
 
-    const parseInputToIso = s => {
-      const v = normalize(s);
-      if (!v) return '';
-      // If already ISO
-      const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (iso) return v;
-      // match dd/mm/yyyy or dd-mm-yyyy
-      const br = v.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
-      if (br) return `${br[3]}-${br[2]}-${br[1]}`;
-      // try Date parse
-      const d = new Date(v);
-      if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0,10);
-      return '';
-    };
-
-    const loadSpreadsheetRows = async () => {
-      for (const url of buildSpreadsheetCsvCandidates()) {
-        try {
-          const response = await fetch(url, { cache: 'no-store' });
-          if (!response.ok) continue;
-
-          const text = await response.text();
-          if (!text || text.includes('<html') || text.includes('Sign in')) continue;
-
-          const rows = parseCsv(text);
-          if (rows.length > 0) return rows;
-        } catch (error) {
-          console.warn('Falha ao tentar ler a planilha em', url, error);
+      const renderTable = dataset => {
+        const tbody = document.getElementById('tableBody');
+        const tableSummary = document.getElementById('tableSummary');
+        tbody.innerHTML = '';
+        if (tableSummary) {
+          tableSummary.textContent = dataset.length > 0
+            ? `Mostrando ${dataset.length} registro${dataset.length === 1 ? '' : 's'}`
+            : 'Nenhum registro encontrado';
         }
-      }
+        dataset.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.taskId}</td>
+            <td>${item.driver}</td>
+            <td>${item.driverName}</td>
+            <td>${item.veiculo}</td>
+            <td>${item.cluster}</td>
+            <td>${item.createTime}</td>
+            <td>${item.driverAssignedTime}</td>
+            <td>${item.creator}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      };
 
-      throw new Error('Não foi possível carregar a planilha do Google Sheets.');
-    };
+      const setTextContentSafe = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      };
+      const renderDashboard = dataset => {
+        const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
+        const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
 
-    const buildDataset = rows => rows.map(row => ({
-      taskId: firstValue(row, ['Task ID', 'taskId', 'Task Id']),
-      driver: firstValue(row, ['Driver', 'driver']),
-      driverName: firstValue(row, ['Driver name', 'driverName', 'Driver Name']),
-      veiculo: firstValue(row, ['Veiculo', 'veiculo', 'Vehicle', 'Veículo']),
-      cluster: firstValue(row, ['Cluster', 'cluster']),
-      createTime: firstValue(row, ['Create Time', 'createTime', 'Create time']),
-      driverAssignedTime: firstValue(row, ['Driver Assigned Time', 'driverAssignedTime', 'Driver assigned time']),
-      creator: firstValue(row, ['Creator', 'creator']).toLowerCase(),
-      rowDate: parseDateKey(firstValue(row, ['Delivery Date', 'Date', 'date', 'Data', 'Create Date', 'createDate', 'Data de criação'])) || parseDateKey(firstValue(row, ['Create Time', 'createTime', 'Create time'])),
-      numberOfOrders: parseInt(
-        normalize(firstValue(row, [
-          'Number of assigned orders/TO',
-          'Number of Assigned Orders/TO',
-          'numberOfOrders',
-          'assigned orders'
-        ])).replace(/[^\d]/g, ''),
-        10
-      ) || 0
-    }));
+        const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
+        dataset.forEach(item => {
+          const v = (item.veiculo || '').toLowerCase();
+          if (v.includes('van')) vehiclesCount.van += 1;
+          else if (v.includes('fiorino')) vehiclesCount.fiorino += 1;
+          else if (v.includes('moto')) vehiclesCount.moto += 1;
+          else if (v.includes('passeio')) vehiclesCount.passeio += 1;
+        });
+        const totalVehicles = Object.values(vehiclesCount).reduce((a, b) => a + b, 0);
 
-    const getTableFilteredDataset = baseDataset => {
-      const searchTerm = normalize(document.getElementById('tableSearch').value).toLowerCase();
-      const vehicleFilter = normalize(document.getElementById('tableVehicleFilter').value).toLowerCase();
-      const dateFrom = parseInputToIso(normalize(document.getElementById('tableDateFrom').value));
-      const dateTo = parseInputToIso(normalize(document.getElementById('tableDateTo').value));
+        setTextContentSafe('totalOrders', totalOrders.toLocaleString());
+        setTextContentSafe('uniqueDrivers', uniqueDrivers);
+        setTextContentSafe('totalMoto', vehiclesCount.moto);
+        setTextContentSafe('totalPasseio', vehiclesCount.passeio);
+        setTextContentSafe('totalFiorino', vehiclesCount.fiorino);
+        setTextContentSafe('totalVan', vehiclesCount.van);
 
-      return baseDataset.filter(item => {
-        const haystack = `${item.taskId} ${item.driver} ${item.driverName} ${item.veiculo} ${item.cluster} ${item.creator}`.toLowerCase();
-        const matchesSearch = !searchTerm || haystack.includes(searchTerm);
-        const matchesVehicle = !vehicleFilter || normalize(item.veiculo).toLowerCase().includes(vehicleFilter);
+        const routesByVehicleCount = {};
+        dataset.forEach(item => {
+          const key = item.veiculo || 'Não informado';
+          routesByVehicleCount[key] = (routesByVehicleCount[key] || 0) + 1;
+        });
 
-        let matchesDate = true;
-        if (dateFrom && item.rowDate) {
-          matchesDate = matchesDate && item.rowDate >= dateFrom;
-        }
-        if (dateTo && item.rowDate) {
-          matchesDate = matchesDate && item.rowDate <= dateTo;
-        }
+        const vehicles = Object.keys(routesByVehicleCount);
+        const routesCount = vehicles.map(v => routesByVehicleCount[v]);
+        const barColors = ['#ff8c00', '#ffb347', '#ff6a00', '#ff4d00', '#c96b00', '#ffd166', '#7c4dff'];
 
-        return matchesSearch && matchesVehicle && matchesDate;
-      });
-    };
-
-    const renderTable = dataset => {
-      const tbody = document.getElementById('tableBody');
-      const tableSummary = document.getElementById('tableSummary');
-      tbody.innerHTML = '';
-      if (tableSummary) {
-        tableSummary.textContent = dataset.length > 0
-          ? `Mostrando ${dataset.length} registro${dataset.length === 1 ? '' : 's'}`
-          : 'Nenhum registro encontrado';
-      }
-      dataset.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${item.taskId}</td>
-          <td>${item.driver}</td>
-          <td>${item.driverName}</td>
-          <td>${item.veiculo}</td>
-          <td>${item.cluster}</td>
-          <td>${item.createTime}</td>
-          <td>${item.driverAssignedTime}</td>
-          <td>${item.creator}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    };
-
-    const setTextContentSafe = (id, text) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = text;
-    };
-    const renderDashboard = dataset => {
-      const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
-      const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
-
-      const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
-      dataset.forEach(item => {
-        const v = (item.veiculo || '').toLowerCase();
-        if (v.includes('van')) vehiclesCount.van += 1;
-        else if (v.includes('fiorino')) vehiclesCount.fiorino += 1;
-        else if (v.includes('moto')) vehiclesCount.moto += 1;
-        else if (v.includes('passeio')) vehiclesCount.passeio += 1;
-      });
-      const totalVehicles = Object.values(vehiclesCount).reduce((a, b) => a + b, 0);
-
-      setTextContentSafe('totalOrders', totalOrders.toLocaleString());
-      setTextContentSafe('uniqueDrivers', uniqueDrivers);
-      setTextContentSafe('totalMoto', vehiclesCount.moto);
-      setTextContentSafe('totalPasseio', vehiclesCount.passeio);
-      setTextContentSafe('totalFiorino', vehiclesCount.fiorino);
-      setTextContentSafe('totalVan', vehiclesCount.van);
-
-      const routesByVehicleCount = {};
-      dataset.forEach(item => {
-        const key = item.veiculo || 'Não informado';
-        routesByVehicleCount[key] = (routesByVehicleCount[key] || 0) + 1;
-      });
-
-      const vehicles = Object.keys(routesByVehicleCount);
-      const routesCount = vehicles.map(v => routesByVehicleCount[v]);
-      const barColors = ['#ff8c00', '#ffb347', '#ff6a00', '#ff4d00', '#c96b00', '#ffd166', '#7c4dff'];
-
-      const ctx = document.getElementById('routesByVehicle').getContext('2d');
-      if (window.routesChart) window.routesChart.destroy();
-      window.routesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: vehicles,
-          datasets: [{
-            label: 'Veículos carregados',
-            data: routesCount,
-            backgroundColor: vehicles.map((_, index) => barColors[index % barColors.length]),
-            borderColor: '#fff1d6',
-            borderWidth: 1,
-            borderRadius: 6,
-            barThickness: 36
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: context => `${context.parsed.y} veículos`
+        const ctx = document.getElementById('routesByVehicle').getContext('2d');
+        if (window.routesChart) window.routesChart.destroy();
+        window.routesChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: vehicles,
+            datasets: [{
+              label: 'Veículos carregados',
+              data: routesCount,
+              backgroundColor: vehicles.map((_, index) => barColors[index % barColors.length]),
+              borderColor: '#fff1d6',
+              borderWidth: 1,
+              borderRadius: 6,
+              barThickness: 36
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: context => `${context.parsed.y} veículos`
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { color: '#ffb347' },
+                grid: { color: 'rgba(255, 140, 0, 0.15)' },
+                title: { display: true, text: 'Quantidade', color: '#ffb347' }
+              },
+              x: {
+                ticks: { maxRotation: 45, minRotation: 45, color: '#ffb347' },
+                grid: { display: false },
+                title: { display: true, text: 'Veículo', color: '#ffb347' }
               }
             }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#ffb347' },
-              grid: { color: 'rgba(255, 140, 0, 0.15)' },
-              title: { display: true, text: 'Quantidade', color: '#ffb347' }
-            },
-            x: {
-              ticks: { maxRotation: 45, minRotation: 45, color: '#ffb347' },
-              grid: { display: false },
-              title: { display: true, text: 'Veículo', color: '#ffb347' }
-            }
           }
-        }
-      });
-
-      renderHourlyCharts(dataset);
-      renderTable(getTableFilteredDataset(dataset));
-
-      // also update time series for current interval if present
-      try {
-        const topA = parseInputToIso(document.getElementById('dateFilter').value);
-        const topB = parseInputToIso(document.getElementById('dateFilter2')?.value || '');
-        if (topA || topB) renderTimeSeries(topA, topB);
-      } catch (e) {}
-
-      const loadingText = document.getElementById('loadingText');
-      if (loadingText) {
-        loadingText.textContent = `Dados carregados da planilha (${dataset.length} registros).`;
-        loadingText.style.color = '#ffa500';
-        loadingText.style.display = 'block';
-      }
-    };
-
-    const applyDateFilter = () => {
-      let isoFrom = parseInputToIso(document.getElementById('dateFilter').value);
-      let isoTo = parseInputToIso(document.getElementById('dateFilter2') ? document.getElementById('dateFilter2').value : '');
-
-      if (isoFrom && !isoTo) isoTo = isoFrom;
-      if (!isoFrom && isoTo) isoFrom = isoTo;
-
-      let filtered = allDataset;
-
-      if (isoFrom || isoTo) {
-        const start = isoFrom && isoTo ? (isoFrom <= isoTo ? isoFrom : isoTo) : isoFrom || isoTo;
-        const end = isoFrom && isoTo ? (isoFrom <= isoTo ? isoTo : isoFrom) : isoFrom || isoTo;
-
-        filtered = allDataset.filter(item => {
-          const rd = item.rowDate;
-          return rd && rd >= start && rd <= end;
         });
-      }
 
-      currentDataset = filtered;
-      // propagate top range to table filters (display as dd/mm/yyyy)
-      try {
-        document.getElementById('tableDateFrom').value = isoToBr(isoFrom) || '';
-        document.getElementById('tableDateTo').value = isoToBr(isoTo) || '';
-      } catch (e) {}
+        renderHourlyCharts(dataset);
+        renderTable(getTableFilteredDataset(dataset));
 
-      // update visible period label
-      try {
-        const lbl = document.getElementById('periodLabel');
-        if (isoFrom || isoTo) {
-          lbl.textContent = `Período: ${isoToBr(isoFrom) || ''} — ${isoToBr(isoTo) || ''}`;
-        } else {
-          lbl.textContent = '';
-        }
-      } catch (e) {}
+        // also update time series for current interval if present
+        try {
+          const topA = parseInputToIso(document.getElementById('dateFilter').value);
+          const topB = parseInputToIso(document.getElementById('dateFilter2')?.value || '');
+          if (topA || topB) renderTimeSeries(topA, topB);
+        } catch (e) {}
 
-      syncUrlWithFilters(getFilterState());
-      renderDashboard(currentDataset);
-
-      const loadingText = document.getElementById('loadingText');
-      if (filtered.length === 0) {
+        const loadingText = document.getElementById('loadingText');
         if (loadingText) {
-          loadingText.textContent = 'Nenhum registro encontrado para a data selecionada.';
+          loadingText.textContent = `Dados carregados da planilha (${dataset.length} registros).`;
+          loadingText.style.color = '#ffa500';
           loadingText.style.display = 'block';
-          loadingText.style.color = '#ffb347';
         }
-      } else {
-        if (loadingText) loadingText.style.display = 'none';
-      }
-    };
+      };
 
-    // Helper: add days to ISO date
-    const isoAddDays = (iso, days) => {
-      if (!iso) return '';
-      const d = new Date(iso + 'T00:00:00');
-      d.setDate(d.getDate() + days);
-      return d.toISOString().slice(0,10);
-    };
+      const applyDateFilter = () => {
+        let isoFrom = parseInputToIso(document.getElementById('dateFilter').value);
+        let isoTo = parseInputToIso(document.getElementById('dateFilter2') ? document.getElementById('dateFilter2').value : '');
 
-    const isoDiffDays = (aIso, bIso) => {
-      const a = new Date(aIso + 'T00:00:00');
-      const b = new Date(bIso + 'T00:00:00');
-      return Math.round((b - a) / (1000*60*60*24));
-    };
+        if (isoFrom && !isoTo) isoTo = isoFrom;
+        if (!isoFrom && isoTo) isoFrom = isoTo;
 
-    const buildDailySeries = (dataset, startIso, endIso) => {
-      if (!startIso || !endIso) return { labels: [], data: [] };
-      const start = new Date(startIso + 'T00:00:00');
-      const end = new Date(endIso + 'T00:00:00');
-      const days = isoDiffDays(startIso, endIso);
-      const counts = {};
-      for (let i = 0; i <= days; i++) {
-        const iso = isoAddDays(startIso, i);
-        counts[iso] = 0;
-      }
-      dataset.forEach(item => {
-        const d = item.rowDate;
-        if (d && counts[d] !== undefined) counts[d] += 1;
-      });
-      const labels = Object.keys(counts);
-      const data = labels.map(l => counts[l]);
-      return { labels, data };
-    };
+        let filtered = allDataset;
 
-    let timeSeriesChart = null;
-    let compareMode = false;
+        if (isoFrom || isoTo) {
+          const start = isoFrom && isoTo ? (isoFrom <= isoTo ? isoFrom : isoTo) : isoFrom || isoTo;
+          const end = isoFrom && isoTo ? (isoFrom <= isoTo ? isoTo : isoFrom) : isoFrom || isoTo;
 
-    const renderTimeSeries = (startIso, endIso) => {
-      const sIso = startIso || endIso;
-      const eIso = endIso || startIso;
-      if (!sIso || !eIso) return;
-      const series = buildDailySeries(currentDataset, sIso, eIso);
-      const ctx = document.getElementById('timeSeriesChart').getContext('2d');
-      if (timeSeriesChart) timeSeriesChart.destroy();
-      const datasets = [{
-        label: 'Contagem por dia',
-        data: series.data,
-        borderColor: '#ffd166',
-        backgroundColor: 'rgba(255,209,102,0.15)',
-        fill: true,
-        tension: 0.2
-      }];
+          filtered = allDataset.filter(item => {
+            const rd = item.rowDate;
+            return rd && rd >= start && rd <= end;
+          });
+        }
 
-      if (compareMode) {
-        // compute previous interval (shift by length)
-        const len = isoDiffDays(sIso, eIso) + 1;
-        const prevStart = isoAddDays(sIso, -len);
-        const prevEnd = isoAddDays(eIso, -len);
-        const prevSeries = buildDailySeries(allDataset, prevStart, prevEnd);
-        datasets.push({
-          label: 'Semana anterior',
-          data: prevSeries.data,
-          borderColor: '#7c4dff',
-          backgroundColor: 'rgba(124,77,255,0.12)',
+        currentDataset = filtered;
+        // propagate top range to table filters (display as dd/mm/yyyy)
+        try {
+          document.getElementById('tableDateFrom').value = isoToBr(isoFrom) || '';
+          document.getElementById('tableDateTo').value = isoToBr(isoTo) || '';
+        } catch (e) {}
+
+        // update visible period label
+        try {
+          const lbl = document.getElementById('periodLabel');
+          if (isoFrom || isoTo) {
+            lbl.textContent = `Período: ${isoToBr(isoFrom) || ''} — ${isoToBr(isoTo) || ''}`;
+          } else {
+            lbl.textContent = '';
+          }
+        } catch (e) {}
+
+        syncUrlWithFilters(getFilterState());
+        renderDashboard(currentDataset);
+
+        const loadingText = document.getElementById('loadingText');
+        if (filtered.length === 0) {
+          if (loadingText) {
+            loadingText.textContent = 'Nenhum registro encontrado para a data selecionada.';
+            loadingText.style.display = 'block';
+            loadingText.style.color = '#ffb347';
+          }
+        } else {
+          if (loadingText) loadingText.style.display = 'none';
+        }
+      };
+
+      // Helper: add days to ISO date
+      const isoAddDays = (iso, days) => {
+        if (!iso) return '';
+        const d = new Date(iso + 'T00:00:00');
+        d.setDate(d.getDate() + days);
+        return d.toISOString().slice(0,10);
+      };
+
+      const isoDiffDays = (aIso, bIso) => {
+        const a = new Date(aIso + 'T00:00:00');
+        const b = new Date(bIso + 'T00:00:00');
+        return Math.round((b - a) / (1000*60*60*24));
+      };
+
+      const buildDailySeries = (dataset, startIso, endIso) => {
+        if (!startIso || !endIso) return { labels: [], data: [] };
+        const start = new Date(startIso + 'T00:00:00');
+        const end = new Date(endIso + 'T00:00:00');
+        const days = isoDiffDays(startIso, endIso);
+        const counts = {};
+        for (let i = 0; i <= days; i++) {
+          const iso = isoAddDays(startIso, i);
+          counts[iso] = 0;
+        }
+        dataset.forEach(item => {
+          const d = item.rowDate;
+          if (d && counts[d] !== undefined) counts[d] += 1;
+        });
+        const labels = Object.keys(counts);
+        const data = labels.map(l => counts[l]);
+        return { labels, data };
+      };
+
+      let timeSeriesChart = null;
+      let compareMode = false;
+
+      const renderTimeSeries = (startIso, endIso) => {
+        const sIso = startIso || endIso;
+        const eIso = endIso || startIso;
+        if (!sIso || !eIso) return;
+        const series = buildDailySeries(currentDataset, sIso, eIso);
+        const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+        if (timeSeriesChart) timeSeriesChart.destroy();
+        const datasets = [{
+          label: 'Contagem por dia',
+          data: series.data,
+          borderColor: '#ffd166',
+          backgroundColor: 'rgba(255,209,102,0.15)',
           fill: true,
           tension: 0.2
-        });
-      }
+        }];
 
-      timeSeriesChart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: series.labels.map(l => isoToBr(l)), datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: '#ffb347' } } },
-          scales: { x: { ticks: { color: '#ffb347' } }, y: { ticks: { color: '#ffb347' } } }
-        }
-      });
-    };
-
-    const parseTimeHour = value => {
-      const clean = normalize(value);
-      if (!clean) return '';
-      // try datetime with time first
-      const dateTimeMatch = clean.match(/(?:\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}-\d{2}-\d{2}).*?(\d{1,2}):(\d{2})/);
-      if (dateTimeMatch) return String(dateTimeMatch[1]).padStart(2, '0') + ':00';
-      const timeMatch = clean.match(/(\d{1,2}):(\d{2})/);
-      if (timeMatch) return String(timeMatch[1]).padStart(2, '0') + ':00';
-      const hoursOnlyMatch = clean.match(/(?:^|[^\d])(\d{1,2})h(?:[^\d]|$)/i);
-      if (hoursOnlyMatch) return String(hoursOnlyMatch[1]).padStart(2, '0') + ':00';
-      const date = new Date(clean);
-      if (!Number.isNaN(date.getTime())) return String(date.getHours()).padStart(2, '0') + ':00';
-      return '';
-    };
-
-    const buildHourlyCounts = dataset => {
-      const counts = {};
-      dataset.forEach(item => {
-        const hour = parseTimeHour(item.createTime) || parseTimeHour(item.driverAssignedTime);
-        if (!hour) return;
-        const hourLabel = `${hour.slice(0, 2)}h`;
-        counts[hourLabel] = counts[hourLabel] || { vehicles: 0, packages: 0 };
-        counts[hourLabel].vehicles += 1;
-        counts[hourLabel].packages += item.numberOfOrders || 0;
-      });
-
-      const labels = Object.keys(counts).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-      return {
-        labels,
-        vehicleData: labels.map(hour => counts[hour].vehicles),
-        packageData: labels.map(hour => counts[hour].packages),
-        totalVehicles: labels.reduce((sum, hour) => sum + counts[hour].vehicles, 0),
-        totalPackages: labels.reduce((sum, hour) => sum + counts[hour].packages, 0)
-      };
-    };
-
-    let hourlyVehiclesChart = null;
-    let hourlyPackagesChart = null;
-
-
-    const renderHourlyCharts = dataset => {
-      const hourly = buildHourlyCounts(dataset);
-      setTextContentSafe('hourlyVehiclesTotal', hourly.totalVehicles.toLocaleString());
-      setTextContentSafe('hourlyPackagesTotal', hourly.totalPackages.toLocaleString());
-
-      const vehiclesCtx = document.getElementById('hourlyVehiclesChart').getContext('2d');
-      if (hourlyVehiclesChart) hourlyVehiclesChart.destroy();
-      hourlyVehiclesChart = new Chart(vehiclesCtx, {
-        type: 'line',
-        data: {
-          labels: hourly.labels,
-          datasets: [{
-            label: 'Veículos expedidos',
-            data: hourly.vehicleData,
-            borderColor: '#ffb347',
-            backgroundColor: 'rgba(255,140,0,0.15)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3,
-            pointRadius: 4,
-            pointBackgroundColor: '#ffb347',
-            pointHoverRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: context => `${context.parsed.y} veículos` } },
-            datalabels: {
-              align: 'top',
-              anchor: 'end',
-              color: '#ffffff',
-              font: { size: 12, weight: 'bold' },
-              formatter: value => value,
-              offset: 6
-            }
-          },
-          scales: {
-            x: { ticks: { color: '#ffb347' }, grid: { display: false } },
-            y: { beginAtZero: true, ticks: { color: '#ffb347' }, grid: { color: 'rgba(255, 140, 0, 0.15)' } }
-          }
-        }
-      });
-
-      const packagesCtx = document.getElementById('hourlyPackagesChart').getContext('2d');
-      if (hourlyPackagesChart) hourlyPackagesChart.destroy();
-      hourlyPackagesChart = new Chart(packagesCtx, {
-        type: 'line',
-        data: {
-          labels: hourly.labels,
-          datasets: [{
-            label: 'Pacotes expedidos',
-            data: hourly.packageData,
+        if (compareMode) {
+          // compute previous interval (shift by length)
+          const len = isoDiffDays(sIso, eIso) + 1;
+          const prevStart = isoAddDays(sIso, -len);
+          const prevEnd = isoAddDays(eIso, -len);
+          const prevSeries = buildDailySeries(allDataset, prevStart, prevEnd);
+          datasets.push({
+            label: 'Semana anterior',
+            data: prevSeries.data,
             borderColor: '#7c4dff',
-            backgroundColor: 'rgba(124,77,255,0.15)',
-            borderWidth: 2,
+            backgroundColor: 'rgba(124,77,255,0.12)',
             fill: true,
-            tension: 0.3,
-            pointRadius: 4,
-            pointBackgroundColor: '#7c4dff',
-            pointHoverRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: context => `${context.parsed.y} pacotes` } },
-            datalabels: {
-              align: 'top',
-              anchor: 'end',
-              color: '#ffffff',
-              font: { size: 12, weight: 'bold' },
-              formatter: value => value,
-              offset: 6
-            }
-          },
-          scales: {
-            x: { ticks: { color: '#ffb347' }, grid: { display: false } },
-            y: { beginAtZero: true, ticks: { color: '#ffb347' }, grid: { color: 'rgba(255, 140, 0, 0.15)' } }
+            tension: 0.2
+          });
+        }
+
+        timeSeriesChart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: series.labels.map(l => isoToBr(l)), datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#ffb347' } } },
+            scales: { x: { ticks: { color: '#ffb347' } }, y: { ticks: { color: '#ffb347' } } }
           }
-        }
+        });
+      };
+
+      const parseTimeHour = value => {
+        const clean = normalize(value);
+        if (!clean) return '';
+        // try datetime with time first
+        const dateTimeMatch = clean.match(/(?:\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}-\d{2}-\d{2}).*?(\d{1,2}):(\d{2})/);
+        if (dateTimeMatch) return String(dateTimeMatch[1]).padStart(2, '0') + ':00';
+        const timeMatch = clean.match(/(\d{1,2}):(\d{2})/);
+        if (timeMatch) return String(timeMatch[1]).padStart(2, '0') + ':00';
+        const hoursOnlyMatch = clean.match(/(?:^|[^\d])(\d{1,2})h(?:[^\d]|$)/i);
+        if (hoursOnlyMatch) return String(hoursOnlyMatch[1]).padStart(2, '0') + ':00';
+        const date = new Date(clean);
+        if (!Number.isNaN(date.getTime())) return String(date.getHours()).padStart(2, '0') + ':00';
+        return '';
+      };
+
+      const buildHourlyCounts = dataset => {
+        const counts = {};
+        dataset.forEach(item => {
+          const hour = parseTimeHour(item.createTime) || parseTimeHour(item.driverAssignedTime);
+          if (!hour) return;
+          const hourLabel = `${hour.slice(0, 2)}h`;
+          counts[hourLabel] = counts[hourLabel] || { vehicles: 0, packages: 0 };
+          counts[hourLabel].vehicles += 1;
+          counts[hourLabel].packages += item.numberOfOrders || 0;
+        });
+
+        const labels = Object.keys(counts).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+        return {
+          labels,
+          vehicleData: labels.map(hour => counts[hour].vehicles),
+          packageData: labels.map(hour => counts[hour].packages),
+          totalVehicles: labels.reduce((sum, hour) => sum + counts[hour].vehicles, 0),
+          totalPackages: labels.reduce((sum, hour) => sum + counts[hour].packages, 0)
+        };
+      };
+
+      let hourlyVehiclesChart = null;
+      let hourlyPackagesChart = null;
+
+
+      const renderHourlyCharts = dataset => {
+        const hourly = buildHourlyCounts(dataset);
+        setTextContentSafe('hourlyVehiclesTotal', hourly.totalVehicles.toLocaleString());
+        setTextContentSafe('hourlyPackagesTotal', hourly.totalPackages.toLocaleString());
+
+        const vehiclesCtx = document.getElementById('hourlyVehiclesChart').getContext('2d');
+        if (hourlyVehiclesChart) hourlyVehiclesChart.destroy();
+        hourlyVehiclesChart = new Chart(vehiclesCtx, {
+          type: 'line',
+          data: {
+            labels: hourly.labels,
+            datasets: [{
+              label: 'Veículos expedidos',
+              data: hourly.vehicleData,
+              borderColor: '#ffb347',
+              backgroundColor: 'rgba(255,140,0,0.15)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 4,
+              pointBackgroundColor: '#ffb347',
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: context => `${context.parsed.y} veículos` } },
+              datalabels: {
+                align: 'top',
+                anchor: 'end',
+                color: '#ffffff',
+                font: { size: 12, weight: 'bold' },
+                formatter: value => value,
+                offset: 6
+              }
+            },
+            scales: {
+              x: { ticks: { color: '#ffb347' }, grid: { display: false } },
+              y: { beginAtZero: true, ticks: { color: '#ffb347' }, grid: { color: 'rgba(255, 140, 0, 0.15)' } }
+            }
+          }
+        });
+
+        const packagesCtx = document.getElementById('hourlyPackagesChart').getContext('2d');
+        if (hourlyPackagesChart) hourlyPackagesChart.destroy();
+        hourlyPackagesChart = new Chart(packagesCtx, {
+          type: 'line',
+          data: {
+            labels: hourly.labels,
+            datasets: [{
+              label: 'Pacotes expedidos',
+              data: hourly.packageData,
+              borderColor: '#7c4dff',
+              backgroundColor: 'rgba(124,77,255,0.15)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 4,
+              pointBackgroundColor: '#7c4dff',
+              pointHoverRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: context => `${context.parsed.y} pacotes` } },
+              datalabels: {
+                align: 'top',
+                anchor: 'end',
+                color: '#ffffff',
+                font: { size: 12, weight: 'bold' },
+                formatter: value => value,
+                offset: 6
+              }
+            },
+            scales: {
+              x: { ticks: { color: '#ffb347' }, grid: { display: false } },
+              y: { beginAtZero: true, ticks: { color: '#ffb347' }, grid: { color: 'rgba(255, 140, 0, 0.15)' } }
+            }
+          }
+        });
+      };
+
+      document.getElementById('comparePrevWeek').addEventListener('click', () => {
+        compareMode = !compareMode;
+        setTextContentSafe('comparePrevWeek', compareMode ? 'Parar comparação' : 'Comparar semana anterior');
+        const a = parseInputToIso(document.getElementById('dateFilter').value);
+        const b = parseInputToIso(document.getElementById('dateFilter2')?.value || '');
+        if (a || b) renderTimeSeries(a, b);
       });
-    };
 
-    document.getElementById('comparePrevWeek').addEventListener('click', () => {
-      compareMode = !compareMode;
-      setTextContentSafe('comparePrevWeek', compareMode ? 'Parar comparação' : 'Comparar semana anterior');
-      const a = parseInputToIso(document.getElementById('dateFilter').value);
-      const b = parseInputToIso(document.getElementById('dateFilter2')?.value || '');
-      if (a || b) renderTimeSeries(a, b);
-    });
+      const applyTableFilters = () => {
+        syncUrlWithFilters(getFilterState());
+        renderTable(getTableFilteredDataset(currentDataset));
+      };
 
-    const applyTableFilters = () => {
-      syncUrlWithFilters(getFilterState());
-      renderTable(getTableFilteredDataset(currentDataset));
-    };
+      const clearTableFilters = () => {
+        document.getElementById('tableSearch').value = '';
+        document.getElementById('tableDateFrom').value = '';
+        document.getElementById('tableDateTo').value = '';
+        document.getElementById('tableVehicleFilter').value = '';
+        syncUrlWithFilters(getFilterState());
+        renderTable(getTableFilteredDataset(currentDataset));
+      };
 
-    const clearTableFilters = () => {
-      document.getElementById('tableSearch').value = '';
-      document.getElementById('tableDateFrom').value = '';
-      document.getElementById('tableDateTo').value = '';
-      document.getElementById('tableVehicleFilter').value = '';
-      syncUrlWithFilters(getFilterState());
-      renderTable(getTableFilteredDataset(currentDataset));
-    };
+      const populateVehicleFilterOptions = dataset => {
+        const vehicleSelect = document.getElementById('tableVehicleFilter');
+        const previousValue = normalize(vehicleSelect.value);
+        vehicleSelect.innerHTML = '<option value="">Todos os veiculos</option>';
 
-    const populateVehicleFilterOptions = dataset => {
-      const vehicleSelect = document.getElementById('tableVehicleFilter');
-      const previousValue = normalize(vehicleSelect.value);
-      vehicleSelect.innerHTML = '<option value="">Todos os veiculos</option>';
+        const vehicles = Array.from(new Set(dataset.map(item => normalize(item.veiculo)).filter(Boolean))).sort();
+        vehicles.forEach(vehicle => {
+          const option = document.createElement('option');
+          option.value = vehicle;
+          option.textContent = vehicle;
+          vehicleSelect.appendChild(option);
+        });
 
-      const vehicles = Array.from(new Set(dataset.map(item => normalize(item.veiculo)).filter(Boolean))).sort();
-      vehicles.forEach(vehicle => {
-        const option = document.createElement('option');
-        option.value = vehicle;
-        option.textContent = vehicle;
-        vehicleSelect.appendChild(option);
-      });
-
-      if (previousValue && vehicles.includes(previousValue)) {
-        vehicleSelect.value = previousValue;
-      }
-    };
-
-    const applyCurrentFiltersAndRender = () => {
-      const filterState = getFilterState();
-      if (filterState.topDate || filterState.topDate2) {
-        applyDateFilter();
-      } else {
-        currentDataset = allDataset;
-        renderDashboard(currentDataset);
-      }
-    };
-
-    const refreshDashboardData = async ({ showMessage = true } = {}) => {
-      const loadingText = document.getElementById('loadingText');
-      try {
-        const rows = await loadSpreadsheetRows();
-        if (!Array.isArray(rows) || rows.length === 0) {
-          throw new Error('Nenhum dado disponivel para exibir.');
+        if (previousValue && vehicles.includes(previousValue)) {
+          vehicleSelect.value = previousValue;
         }
+      };
 
-        allDataset = buildDataset(rows);
-        populateVehicleFilterOptions(allDataset);
-        applyCurrentFiltersAndRender();
+      const applyCurrentFiltersAndRender = () => {
+        const filterState = getFilterState();
+        if (filterState.topDate || filterState.topDate2) {
+          applyDateFilter();
+        } else {
+          currentDataset = allDataset;
+          renderDashboard(currentDataset);
+        }
+      };
 
-        if (showMessage) {
-          const refreshedAt = new Date().toLocaleTimeString('pt-BR');
+      const refreshDashboardData = async ({ showMessage = true } = {}) => {
+        const loadingText = document.getElementById('loadingText');
+        try {
+          const rows = await loadSpreadsheetRows();
+          if (!Array.isArray(rows) || rows.length === 0) {
+            throw new Error('Nenhum dado disponivel para exibir.');
+          }
+
+          allDataset = buildDataset(rows);
+          populateVehicleFilterOptions(allDataset);
+          applyCurrentFiltersAndRender();
+
+          if (showMessage) {
+            const refreshedAt = new Date().toLocaleTimeString('pt-BR');
+            if (loadingText) {
+              loadingText.textContent = `Dados sincronizados com a planilha (${allDataset.length} registros). Atualizado as ${refreshedAt}.`;
+              loadingText.style.color = '#ffa500';
+              loadingText.style.display = 'block';
+            }
+          }
+
+          return true;
+        } catch (error) {
           if (loadingText) {
-            loadingText.textContent = `Dados sincronizados com a planilha (${allDataset.length} registros). Atualizado as ${refreshedAt}.`;
-            loadingText.style.color = '#ffa500';
+            loadingText.textContent = error.message;
+            loadingText.style.color = '#ff4c4c';
             loadingText.style.display = 'block';
           }
+          console.error(error);
+          return false;
         }
+      };
 
-        return true;
-      } catch (error) {
-        if (loadingText) {
-          loadingText.textContent = error.message;
-          loadingText.style.color = '#ff4c4c';
-          loadingText.style.display = 'block';
-        }
-        console.error(error);
-        return false;
-      }
-    };
+      document.getElementById('applyDateFilter').addEventListener('click', applyDateFilter);
+      document.getElementById('clearDateFilter').addEventListener('click', () => {
+        document.getElementById('dateFilter').value = '';
+        if (document.getElementById('dateFilter2')) document.getElementById('dateFilter2').value = '';
+        currentDataset = allDataset;
+        syncUrlWithFilters(getFilterState());
+        renderDashboard(currentDataset);
+      });
+      // clear period label when clearing
+      document.getElementById('clearDateFilter').addEventListener('click', () => {
+        const lbl = document.getElementById('periodLabel'); if (lbl) lbl.textContent = '';
+      });
+      // auto-apply when user picks dates
+      document.getElementById('dateFilter').addEventListener('change', applyDateFilter);
+      if (document.getElementById('dateFilter2')) document.getElementById('dateFilter2').addEventListener('change', applyDateFilter);
+      document.getElementById('tableSearch').addEventListener('input', applyTableFilters);
+      document.getElementById('tableVehicleFilter').addEventListener('change', applyTableFilters);
+      document.getElementById('applyTableFilters').addEventListener('click', applyTableFilters);
+      document.getElementById('clearTableFilters').addEventListener('click', clearTableFilters);
 
-    document.getElementById('applyDateFilter').addEventListener('click', applyDateFilter);
-    document.getElementById('clearDateFilter').addEventListener('click', () => {
-      document.getElementById('dateFilter').value = '';
-      if (document.getElementById('dateFilter2')) document.getElementById('dateFilter2').value = '';
-      currentDataset = allDataset;
-      syncUrlWithFilters(getFilterState());
-      renderDashboard(currentDataset);
-    });
-    // clear period label when clearing
-    document.getElementById('clearDateFilter').addEventListener('click', () => {
-      const lbl = document.getElementById('periodLabel'); if (lbl) lbl.textContent = '';
-    });
-    // auto-apply when user picks dates
-    document.getElementById('dateFilter').addEventListener('change', applyDateFilter);
-    if (document.getElementById('dateFilter2')) document.getElementById('dateFilter2').addEventListener('change', applyDateFilter);
-    document.getElementById('tableSearch').addEventListener('input', applyTableFilters);
-    document.getElementById('tableVehicleFilter').addEventListener('change', applyTableFilters);
-    document.getElementById('applyTableFilters').addEventListener('click', applyTableFilters);
-    document.getElementById('clearTableFilters').addEventListener('click', clearTableFilters);
+      const initialState = loadFilterStateFromUrl();
+      applyFilterStateToInputs(initialState);
 
-    const initialState = loadFilterStateFromUrl();
-    applyFilterStateToInputs(initialState);
-
+      refreshDashboardData({ showMessage: true });
+      setInterval(() => {
+        refreshDashboardData({ showMessage: true });
+      }, DATA_REFRESH_MS);
+    </script>
+  </body>
+  </html>
