@@ -15,9 +15,10 @@
         box-sizing: inherit;
       }
       body {
-        background-color: #000;
-        color: #ff8c00;
+        background: linear-gradient(180deg, #eef6ff 0%, #e4f0ff 100%);
+        color: #0c2f66;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: 700;
         margin: 0 auto;
         max-width: 1680px;
         padding: 16px 24px 24px;
@@ -25,7 +26,7 @@
       h1 {
         text-align: center;
         margin-bottom: 20px;
-        color: #ff8c00;
+        color: #123f80;
       }
       .toolbar {
         display: grid;
@@ -36,16 +37,17 @@
         margin-bottom: 24px;
       }
       .toolbar label {
-        color: #ffa500;
+        color: #123f80;
         font-weight: 600;
       }
       .toolbar input,
       .toolbar button {
         padding: 8px 12px;
         border-radius: 6px;
-        border: 1px solid #ff8c00;
-        background: #111;
-        color: #fff;
+        border: 1px solid #8fb2de;
+        background: #f8fbff;
+        color: #0c2f66;
+        font-weight: 700;
       }
       /* calendar icon inside inputs */
       #dateFilter, #dateFilter2, #tableDateFrom, #tableDateTo {
@@ -64,7 +66,7 @@
         transition: background 0.2s ease;
       }
       .toolbar button:hover {
-        background: #1f1406;
+        background: #e1ecfb;
       }
       .cards {
         display: grid;
@@ -73,17 +75,17 @@
         margin-bottom: 30px;
       }
       .card {
-        background: rgba(17, 17, 17, 0.92);
-        border: 1px solid rgba(255, 140, 0, 0.2);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        background: rgba(250, 253, 255, 0.98);
+        border: 1px solid rgba(129, 162, 204, 0.35);
+        box-shadow: 0 10px 24px rgba(18, 64, 128, 0.12);
         border-radius: 14px;
         padding: 24px 20px;
         text-align: center;
-        color: #ff8c00;
+        color: #0c2f66;
         min-height: 160px;
       }
       .card h2 { font-size: 2.2em; margin: 0 0 10px; letter-spacing: -0.03em; }
-      .card p { font-size: 0.95em; color: #f5a623; margin: 0; }
+      .card p { font-size: 0.95em; color: #1d4d90; margin: 0; }
       .charts {
         display: flex;
         gap: 40px;
@@ -92,10 +94,10 @@
         margin-bottom: 40px;
       }
       .chart-container {
-        background: rgba(17, 17, 17, 0.96);
-        border: 1px solid rgba(255, 140, 0, 0.16);
+        background: rgba(248, 252, 255, 0.96);
+        border: 1px solid rgba(129, 162, 204, 0.3);
         border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 18px 36px rgba(18, 64, 128, 0.11);
         padding: 22px;
         flex: 1 1 420px;
         min-width: 420px;
@@ -107,19 +109,19 @@
         align-items: baseline;
         margin-bottom: 12px;
         gap: 10px;
-        color: #ffb347;
+        color: #1e4f92;
         font-size: 0.95em;
       }
       .chart-summary strong {
         display: block;
         font-size: 1.75em;
-        color: #ffffff;
+        color: #123f80;
         letter-spacing: -0.02em;
       }
       .chart-container h3 {
         margin: 0 0 12px;
         text-align: center;
-        color: #ffb347;
+        color: #123f80;
         font-size: 1.05em;
       }
       canvas {
@@ -241,12 +243,12 @@
         align-items: center;
         padding: 12px;
         border-radius: 10px;
-        background: linear-gradient(135deg, rgba(255, 140, 0, 0.12), rgba(255, 140, 0, 0.05));
-        border: 1px solid rgba(255, 140, 0, 0.3);
-        box-shadow: 0 0 10px rgba(255, 140, 0, 0.12);
+        background: linear-gradient(135deg, rgba(197, 219, 245, 0.5), rgba(225, 238, 255, 0.45));
+        border: 1px solid rgba(129, 162, 204, 0.35);
+        box-shadow: 0 0 10px rgba(18, 64, 128, 0.1);
       }
       .table-filters-title {
-        color: #ffb347;
+        color: #123f80;
         font-weight: 700;
         margin-right: 4px;
         font-size: 0.95em;
@@ -256,9 +258,10 @@
       .table-filters button {
         padding: 8px 12px;
         border-radius: 6px;
-        border: 1px solid #ff8c00;
-        background: #111;
-        color: #fff;
+        border: 1px solid #8fb2de;
+        background: #f8fbff;
+        color: #0c2f66;
+        font-weight: 700;
         min-width: 160px;
       }
       .table-filters input[type="date"] {
@@ -269,10 +272,10 @@
         cursor: pointer;
       }
       .table-filters button:hover {
-        background: #1f1406;
+        background: #e1ecfb;
       }
       .table-summary {
-        color: #ffb347;
+        color: #123f80;
         font-size: 0.95em;
         margin-bottom: 10px;
         font-weight: 600;
@@ -280,25 +283,27 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        background: #111;
-        box-shadow: 0 0 15px #cc7000;
+        background: #f8fbff;
+        box-shadow: 0 0 15px rgba(18, 64, 128, 0.2);
         border-radius: 8px;
         overflow: hidden;
-        color: #ff8c00;
+        color: #0c2f66;
       }
-      thead { background: #663300; color: #ffa500; }
+      thead { background: #d7e8fb; color: #123f80; }
       th, td {
         padding: 12px 15px;
-        border: 1px solid #ff8c00;
+        border: 1px solid #a9c3e3;
         text-align: left;
         font-size: 0.9em;
         white-space: nowrap;
+        font-weight: 700;
       }
-      tbody tr:nth-child(even) { background: #331a00; }
+      tbody tr:nth-child(even) { background: #edf5ff; }
       .loading {
         text-align: center;
         margin-top: 40px;
-        color: #ffa500;
+        color: #123f80;
+        font-weight: 700;
       }
       @media (max-width: 1100px) {
         .charts, .cards { flex-direction: column; align-items: center; }
