@@ -221,8 +221,6 @@
     <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
     <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
     <div class="card"><h2 id="uniqueCreators">0</h2><p>Creadores Ativos</p></div>
-
->>>>>>> f48d9ed0945f757c3fde0fe355946a19063cc916
     <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
     <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
     <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
@@ -319,12 +317,19 @@
   <script>
     // Public CSV URL provided by the user (published Google Sheets)
     const spreadsheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgueXBnbIP3u_JGpp-ROuMFHpQmKFruar0_uVcRzLQu8_OvbgBhoMm9OPiZDGrfrXSvwVTlhaMtz8n/pub?gid=0&single=true&output=csv';
-    const spreadsheetCsvCandidates = [
-      spreadsheetCsvUrl,
-      `https://r.jina.ai/http/${encodeURIComponent(spreadsheetCsvUrl)}`,
-      `https://corsproxy.io/?${encodeURIComponent(spreadsheetCsvUrl)}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(spreadsheetCsvUrl)}`
-    ];
+    const DATA_REFRESH_MS = 60000;
+
+    const buildSpreadsheetCsvCandidates = () => {
+      const cacheBust = `ts=${Date.now()}`;
+      const separator = spreadsheetCsvUrl.includes('?') ? '&' : '?';
+      const freshCsvUrl = `${spreadsheetCsvUrl}${separator}${cacheBust}`;
+      return [
+        freshCsvUrl,
+        `https://r.jina.ai/http/${encodeURIComponent(freshCsvUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(freshCsvUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(freshCsvUrl)}`
+      ];
+    };
 
     const normalize = value => String(value || '').trim();
     const isoToBr = iso => {
@@ -469,7 +474,7 @@
     };
 
     const loadSpreadsheetRows = async () => {
-      for (const url of spreadsheetCsvCandidates) {
+      for (const url of buildSpreadsheetCsvCandidates()) {
         try {
           const response = await fetch(url, { cache: 'no-store' });
           if (!response.ok) continue;
@@ -558,8 +563,6 @@
       const el = document.getElementById(id);
       if (el) el.textContent = text;
     };
-
->>>>>>> f48d9ed0945f757c3fde0fe355946a19063cc916
     const renderDashboard = dataset => {
       const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
       const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
@@ -582,7 +585,6 @@
       setTextContentSafe('totalPasseio', vehiclesCount.passeio);
       setTextContentSafe('totalFiorino', vehiclesCount.fiorino);
       setTextContentSafe('totalVan', vehiclesCount.van);
->>>>>>> f48d9ed0945f757c3fde0fe355946a19063cc916
 
       const routesByVehicleCount = {};
       dataset.forEach(item => {
@@ -932,6 +934,63 @@
       renderTable(getTableFilteredDataset(currentDataset));
     };
 
+    const populateVehicleFilterOptions = dataset => {
+      const vehicleSelect = document.getElementById('tableVehicleFilter');
+      const previousValue = normalize(vehicleSelect.value);
+      vehicleSelect.innerHTML = '<option value="">Todos os veiculos</option>';
+
+      const vehicles = Array.from(new Set(dataset.map(item => normalize(item.veiculo)).filter(Boolean))).sort();
+      vehicles.forEach(vehicle => {
+        const option = document.createElement('option');
+        option.value = vehicle;
+        option.textContent = vehicle;
+        vehicleSelect.appendChild(option);
+      });
+
+      if (previousValue && vehicles.includes(previousValue)) {
+        vehicleSelect.value = previousValue;
+      }
+    };
+
+    const applyCurrentFiltersAndRender = () => {
+      const filterState = getFilterState();
+      if (filterState.topDate || filterState.topDate2) {
+        applyDateFilter();
+      } else {
+        currentDataset = allDataset;
+        renderDashboard(currentDataset);
+      }
+    };
+
+    const refreshDashboardData = async ({ showMessage = true } = {}) => {
+      const loadingText = document.getElementById('loadingText');
+      try {
+        const rows = await loadSpreadsheetRows();
+        if (!Array.isArray(rows) || rows.length === 0) {
+          throw new Error('Nenhum dado disponivel para exibir.');
+        }
+
+        allDataset = buildDataset(rows);
+        populateVehicleFilterOptions(allDataset);
+        applyCurrentFiltersAndRender();
+
+        if (showMessage) {
+          const refreshedAt = new Date().toLocaleTimeString('pt-BR');
+          loadingText.textContent = `Dados sincronizados com a planilha (${allDataset.length} registros). Atualizado as ${refreshedAt}.`;
+          loadingText.style.color = '#ffa500';
+          loadingText.style.display = 'block';
+        }
+
+        return true;
+      } catch (error) {
+        loadingText.textContent = error.message;
+        loadingText.style.color = '#ff4c4c';
+        loadingText.style.display = 'block';
+        console.error(error);
+        return false;
+      }
+    };
+
     document.getElementById('applyDateFilter').addEventListener('click', applyDateFilter);
     document.getElementById('clearDateFilter').addEventListener('click', () => {
       document.getElementById('dateFilter').value = '';
@@ -952,39 +1011,13 @@
     document.getElementById('applyTableFilters').addEventListener('click', applyTableFilters);
     document.getElementById('clearTableFilters').addEventListener('click', clearTableFilters);
 
-    loadSpreadsheetRows()
-      .then(rows => {
-        if (!Array.isArray(rows) || rows.length === 0) {
-          throw new Error('Nenhum dado disponível para exibir.');
-        }
+    const initialState = loadFilterStateFromUrl();
+    applyFilterStateToInputs(initialState);
 
-        allDataset = buildDataset(rows);
-        currentDataset = allDataset;
-
-        const initialState = loadFilterStateFromUrl();
-        applyFilterStateToInputs(initialState);
-
-        const vehicleSelect = document.getElementById('tableVehicleFilter');
-        const vehicles = Array.from(new Set(allDataset.map(item => normalize(item.veiculo)).filter(Boolean))).sort();
-        vehicles.forEach(vehicle => {
-          const option = document.createElement('option');
-          option.value = vehicle;
-          option.textContent = vehicle;
-          vehicleSelect.appendChild(option);
-        });
-
-        if (initialState.topDate || initialState.topDate2) {
-          applyDateFilter();
-        } else {
-          renderDashboard(currentDataset);
-        }
-      })
-      .catch(error => {
-        const loadingText = document.getElementById('loadingText');
-        loadingText.textContent = error.message;
-        loadingText.style.color = '#ff4c4c';
-        console.error(error);
-      });
+    refreshDashboardData({ showMessage: true });
+    setInterval(() => {
+      refreshDashboardData({ showMessage: true });
+    }, DATA_REFRESH_MS);
   </script>
 </body>
 </html>
