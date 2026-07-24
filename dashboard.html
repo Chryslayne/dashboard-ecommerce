@@ -220,6 +220,10 @@
   <div class="cards">
     <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
     <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
+<<<<<<< HEAD
+    <div class="card"><h2 id="uniqueCreators">0</h2><p>Creadores Ativos</p></div>
+=======
+>>>>>>> b69c14eec589bd68027af73ae1bc6ff6ebde00d1
     <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
     <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
     <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
@@ -551,6 +555,14 @@
       });
     };
 
+<<<<<<< HEAD
+    const setTextContentSafe = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+=======
+>>>>>>> b69c14eec589bd68027af73ae1bc6ff6ebde00d1
     const renderDashboard = dataset => {
       const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
       const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
@@ -566,6 +578,15 @@
       });
       const totalVehicles = Object.values(vehiclesCount).reduce((a, b) => a + b, 0);
 
+<<<<<<< HEAD
+      setTextContentSafe('totalOrders', totalOrders.toLocaleString());
+      setTextContentSafe('uniqueDrivers', uniqueDrivers);
+      setTextContentSafe('uniqueCreators', uniqueCreators);
+      setTextContentSafe('totalMoto', vehiclesCount.moto);
+      setTextContentSafe('totalPasseio', vehiclesCount.passeio);
+      setTextContentSafe('totalFiorino', vehiclesCount.fiorino);
+      setTextContentSafe('totalVan', vehiclesCount.van);
+=======
       document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
       document.getElementById('uniqueDrivers').textContent = uniqueDrivers;
       document.getElementById('uniqueCreators').textContent = uniqueCreators;
@@ -573,6 +594,7 @@
       document.getElementById('totalPasseio').textContent = vehiclesCount.passeio;
       document.getElementById('totalFiorino').textContent = vehiclesCount.fiorino;
       document.getElementById('totalVan').textContent = vehiclesCount.van;
+>>>>>>> b69c14eec589bd68027af73ae1bc6ff6ebde00d1
 
       const routesByVehicleCount = {};
       dataset.forEach(item => {
