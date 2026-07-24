@@ -596,48 +596,75 @@
         const vehicles = Object.keys(routesByVehicleCount);
         const routesCount = vehicles.map(v => routesByVehicleCount[v]);
         const barColors = ['#ff8c00', '#ffb347', '#ff6a00', '#ff4d00', '#c96b00', '#ffd166', '#7c4dff'];
+        const totalRoutesByVehicle = routesCount.reduce((sum, value) => sum + value, 0);
+        const dominantCount = routesCount.length > 0 ? Math.max(...routesCount) : 0;
+        const dominantVehicle = vehicles[routesCount.indexOf(dominantCount)] || 'Sem dados';
+        const dominantPercentage = totalRoutesByVehicle > 0 ? Math.round((dominantCount / totalRoutesByVehicle) * 100) : 0;
+        const routeSliceSelection = { value: 0 };
+
+        const centerTextPlugin = {
+          id: 'centerTextPlugin',
+          afterDraw(chart) {
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+            const selectedValue = routeSliceSelection.value || totalRoutesByVehicle;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#8fd15c';
+            ctx.font = '700 42px Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+            ctx.fillText(selectedValue.toLocaleString('pt-BR'), centerX, centerY + 8);
+            ctx.restore();
+          }
+        };
 
         const ctx = document.getElementById('routesByVehicle').getContext('2d');
         if (window.routesChart) window.routesChart.destroy();
         window.routesChart = new Chart(ctx, {
-          type: 'bar',
+          type: 'doughnut',
           data: {
             labels: vehicles,
             datasets: [{
               label: 'Veículos carregados',
               data: routesCount,
               backgroundColor: vehicles.map((_, index) => barColors[index % barColors.length]),
-              borderColor: '#fff1d6',
-              borderWidth: 1,
-              borderRadius: 6,
-              barThickness: 36
+              borderColor: '#1f1f1f',
+              borderWidth: 3,
+              hoverOffset: 4,
+              cutout: '72%'
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            onClick(event, elements, chart) {
+              if (elements.length > 0) {
+                const clickedIndex = elements[0].index;
+                routeSliceSelection.value = routesCount[clickedIndex] || 0;
+              } else {
+                routeSliceSelection.value = 0;
+              }
+              chart.update();
+            },
             plugins: {
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  label: context => `${context.parsed.y} veículos`
+                  label: context => {
+                    const value = Number(context.parsed) || 0;
+                    const percent = totalRoutesByVehicle > 0 ? Math.round((value / totalRoutesByVehicle) * 100) : 0;
+                    return `${context.label}: ${value} rotas (${percent}%)`;
+                  }
                 }
               }
             },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { color: '#ffb347' },
-                grid: { color: 'rgba(255, 140, 0, 0.15)' },
-                title: { display: true, text: 'Quantidade', color: '#ffb347' }
-              },
-              x: {
-                ticks: { maxRotation: 45, minRotation: 45, color: '#ffb347' },
-                grid: { display: false },
-                title: { display: true, text: 'Veículo', color: '#ffb347' }
-              }
-            }
+            cutout: '72%'
           }
+          ,
+          plugins: [centerTextPlugin]
         });
 
         renderHourlyCharts(dataset);
