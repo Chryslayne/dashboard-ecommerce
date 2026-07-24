@@ -220,7 +220,6 @@
   <div class="cards">
     <div class="card"><h2 id="totalOrders">0</h2><p>Total de Pacotes Expedidos</p></div>
     <div class="card"><h2 id="uniqueDrivers">0</h2><p>Motoristas Carregados</p></div>
-    <div class="card"><h2 id="uniqueCreators">0</h2><p>Creadores Ativos</p></div>
     <div class="card"><h2 id="totalMoto">0</h2><p>Motos</p></div>
     <div class="card"><h2 id="totalPasseio">0</h2><p>Passeio</p></div>
     <div class="card"><h2 id="totalFiorino">0</h2><p>Fiorino</p></div>
@@ -316,7 +315,9 @@
   </script>
   <script>
     // Public CSV URL provided by the user (published Google Sheets)
-    const spreadsheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgueXBnbIP3u_JGpp-ROuMFHpQmKFruar0_uVcRzLQu8_OvbgBhoMm9OPiZDGrfrXSvwVTlhaMtz8n/pub?gid=0&single=true&output=csv';
+    const spreadsheetId = '13ItptD7JUCh38h4TwWkdPTjX4Jr8x7mnp_deWXjk0Ys';
+    const spreadsheetGid = '0';
+    const spreadsheetCsvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${spreadsheetGid}`;
     const DATA_REFRESH_MS = 60000;
 
     const buildSpreadsheetCsvCandidates = () => {
@@ -540,9 +541,11 @@
       const tbody = document.getElementById('tableBody');
       const tableSummary = document.getElementById('tableSummary');
       tbody.innerHTML = '';
-      tableSummary.textContent = dataset.length > 0
-        ? `Mostrando ${dataset.length} registro${dataset.length === 1 ? '' : 's'}`
-        : 'Nenhum registro encontrado';
+      if (tableSummary) {
+        tableSummary.textContent = dataset.length > 0
+          ? `Mostrando ${dataset.length} registro${dataset.length === 1 ? '' : 's'}`
+          : 'Nenhum registro encontrado';
+      }
       dataset.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -566,7 +569,6 @@
     const renderDashboard = dataset => {
       const totalOrders = dataset.reduce((sum, item) => sum + item.numberOfOrders, 0);
       const uniqueDrivers = new Set(dataset.map(item => item.driverName || item.driver)).size;
-      const uniqueCreators = new Set(dataset.map(item => item.creator)).size;
 
       const vehiclesCount = { van: 0, fiorino: 0, moto: 0, passeio: 0 };
       dataset.forEach(item => {
@@ -580,7 +582,6 @@
 
       setTextContentSafe('totalOrders', totalOrders.toLocaleString());
       setTextContentSafe('uniqueDrivers', uniqueDrivers);
-      setTextContentSafe('uniqueCreators', uniqueCreators);
       setTextContentSafe('totalMoto', vehiclesCount.moto);
       setTextContentSafe('totalPasseio', vehiclesCount.passeio);
       setTextContentSafe('totalFiorino', vehiclesCount.fiorino);
@@ -650,9 +651,11 @@
       } catch (e) {}
 
       const loadingText = document.getElementById('loadingText');
-      loadingText.textContent = `Dados carregados da planilha (${dataset.length} registros).`;
-      loadingText.style.color = '#ffa500';
-      loadingText.style.display = 'block';
+      if (loadingText) {
+        loadingText.textContent = `Dados carregados da planilha (${dataset.length} registros).`;
+        loadingText.style.color = '#ffa500';
+        loadingText.style.display = 'block';
+      }
     };
 
     const applyDateFilter = () => {
@@ -696,11 +699,13 @@
 
       const loadingText = document.getElementById('loadingText');
       if (filtered.length === 0) {
-        loadingText.textContent = 'Nenhum registro encontrado para a data selecionada.';
-        loadingText.style.display = 'block';
-        loadingText.style.color = '#ffb347';
+        if (loadingText) {
+          loadingText.textContent = 'Nenhum registro encontrado para a data selecionada.';
+          loadingText.style.display = 'block';
+          loadingText.style.color = '#ffb347';
+        }
       } else {
-        loadingText.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none';
       }
     };
 
@@ -826,8 +831,8 @@
 
     const renderHourlyCharts = dataset => {
       const hourly = buildHourlyCounts(dataset);
-      document.getElementById('hourlyVehiclesTotal').textContent = hourly.totalVehicles.toLocaleString();
-      document.getElementById('hourlyPackagesTotal').textContent = hourly.totalPackages.toLocaleString();
+      setTextContentSafe('hourlyVehiclesTotal', hourly.totalVehicles.toLocaleString());
+      setTextContentSafe('hourlyPackagesTotal', hourly.totalPackages.toLocaleString());
 
       const vehiclesCtx = document.getElementById('hourlyVehiclesChart').getContext('2d');
       if (hourlyVehiclesChart) hourlyVehiclesChart.destroy();
@@ -914,7 +919,7 @@
 
     document.getElementById('comparePrevWeek').addEventListener('click', () => {
       compareMode = !compareMode;
-      document.getElementById('comparePrevWeek').textContent = compareMode ? 'Parar comparação' : 'Comparar semana anterior';
+      setTextContentSafe('comparePrevWeek', compareMode ? 'Parar comparação' : 'Comparar semana anterior');
       const a = parseInputToIso(document.getElementById('dateFilter').value);
       const b = parseInputToIso(document.getElementById('dateFilter2')?.value || '');
       if (a || b) renderTimeSeries(a, b);
@@ -976,16 +981,20 @@
 
         if (showMessage) {
           const refreshedAt = new Date().toLocaleTimeString('pt-BR');
-          loadingText.textContent = `Dados sincronizados com a planilha (${allDataset.length} registros). Atualizado as ${refreshedAt}.`;
-          loadingText.style.color = '#ffa500';
-          loadingText.style.display = 'block';
+          if (loadingText) {
+            loadingText.textContent = `Dados sincronizados com a planilha (${allDataset.length} registros). Atualizado as ${refreshedAt}.`;
+            loadingText.style.color = '#ffa500';
+            loadingText.style.display = 'block';
+          }
         }
 
         return true;
       } catch (error) {
-        loadingText.textContent = error.message;
-        loadingText.style.color = '#ff4c4c';
-        loadingText.style.display = 'block';
+        if (loadingText) {
+          loadingText.textContent = error.message;
+          loadingText.style.color = '#ff4c4c';
+          loadingText.style.display = 'block';
+        }
         console.error(error);
         return false;
       }
@@ -1014,10 +1023,3 @@
     const initialState = loadFilterStateFromUrl();
     applyFilterStateToInputs(initialState);
 
-    refreshDashboardData({ showMessage: true });
-    setInterval(() => {
-      refreshDashboardData({ showMessage: true });
-    }, DATA_REFRESH_MS);
-  </script>
-</body>
-</html>
