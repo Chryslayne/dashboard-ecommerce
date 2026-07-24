@@ -130,6 +130,108 @@
       .chart-container h3 {
         margin-bottom: 18px;
       }
+      .chart-container-premium {
+        background:
+          linear-gradient(160deg, rgba(16, 24, 36, 0.98), rgba(11, 18, 28, 0.98)),
+          radial-gradient(circle at 88% 10%, rgba(93, 136, 189, 0.16), transparent 46%);
+        border: 1px solid rgba(122, 148, 180, 0.36);
+        box-shadow: 0 24px 56px rgba(2, 8, 16, 0.62);
+        font-family: 'Trebuchet MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .premium-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .premium-head h3 {
+        margin: 0;
+        text-align: left;
+      }
+      .premium-subtitle {
+        margin: 4px 0 0;
+        color: #9eb2c8;
+        font-size: 0.82em;
+      }
+      .premium-badge {
+        background: linear-gradient(140deg, rgba(68, 95, 124, 0.3), rgba(32, 47, 66, 0.5));
+        border: 1px solid rgba(136, 163, 192, 0.42);
+        border-radius: 12px;
+        min-width: 155px;
+        padding: 10px 12px;
+        text-align: right;
+      }
+      .premium-badge span {
+        display: block;
+        color: #fff;
+        font-size: 0.9em;
+        font-weight: 700;
+      }
+      .premium-badge small {
+        color: #b9cde1;
+        font-size: 0.78em;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .premium-donut-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 1.25fr) minmax(180px, 1fr);
+        gap: 14px;
+        align-items: center;
+      }
+      .premium-donut-canvas-wrap {
+        background: linear-gradient(180deg, rgba(92, 131, 178, 0.11), rgba(23, 34, 49, 0.25));
+        border-radius: 14px;
+        border: 1px solid rgba(130, 156, 186, 0.2);
+        padding: 12px;
+      }
+      #routesByVehicle {
+        height: 320px !important;
+      }
+      .premium-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 320px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+      .premium-legend-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: rgba(50, 70, 96, 0.28);
+        border: 1px solid rgba(124, 150, 180, 0.28);
+        border-radius: 10px;
+        padding: 7px 9px;
+      }
+      .premium-legend-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .premium-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: 0 0 0 2px rgba(230, 239, 250, 0.16);
+        flex: 0 0 10px;
+      }
+      .premium-legend-label {
+        color: #fff;
+        font-size: 0.85em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .premium-legend-value {
+        color: #d1deeb;
+        font-size: 0.82em;
+        font-weight: 700;
+      }
       .table-wrapper { overflow-x: auto; }
       .table-filters {
         display: flex;
@@ -201,6 +303,12 @@
       @media (max-width: 1100px) {
         .charts, .cards { flex-direction: column; align-items: center; }
         .chart-container, .card { max-width: 100%; }
+        .premium-donut-layout {
+          grid-template-columns: 1fr;
+        }
+        .premium-badge {
+          min-width: 0;
+        }
       }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -227,9 +335,23 @@
     </div>
 
     <div class="charts">
-      <div class="chart-container">
-        <h3>Quantidade de Rotas Expedidas por Veículo</h3>
-        <canvas id="routesByVehicle"></canvas>
+      <div class="chart-container chart-container-premium">
+        <div class="premium-head">
+          <div>
+            <h3>Quantidade de Rotas Expedidas por Veículo</h3>
+            <p class="premium-subtitle">Clique em um segmento para destacar a quantidade no centro.</p>
+          </div>
+          <div class="premium-badge">
+            <span id="dominantVehicle">Sem dados</span>
+            <small id="dominantShare">0% de participação</small>
+          </div>
+        </div>
+        <div class="premium-donut-layout">
+          <div class="premium-donut-canvas-wrap">
+            <canvas id="routesByVehicle"></canvas>
+          </div>
+          <div id="routesLegend" class="premium-legend"></div>
+        </div>
       </div>
       <div class="chart-container">
         <h3>Série Temporal (por dia)</h3>
@@ -595,12 +717,55 @@
 
         const vehicles = Object.keys(routesByVehicleCount);
         const routesCount = vehicles.map(v => routesByVehicleCount[v]);
-        const barColors = ['#ff8c00', '#ffb347', '#ff6a00', '#ff4d00', '#c96b00', '#ffd166', '#7c4dff'];
+        const barColors = ['#3f5d7d', '#5a7fa6', '#6f8fb8', '#88a5ca', '#4a6b90', '#7b97b9', '#9cb5d2'];
         const totalRoutesByVehicle = routesCount.reduce((sum, value) => sum + value, 0);
         const dominantCount = routesCount.length > 0 ? Math.max(...routesCount) : 0;
         const dominantVehicle = vehicles[routesCount.indexOf(dominantCount)] || 'Sem dados';
         const dominantPercentage = totalRoutesByVehicle > 0 ? Math.round((dominantCount / totalRoutesByVehicle) * 100) : 0;
         const routeSliceSelection = { value: 0 };
+
+        setTextContentSafe('dominantVehicle', dominantVehicle);
+        setTextContentSafe('dominantShare', `${dominantPercentage}% de participacao`);
+
+        const routesLegend = document.getElementById('routesLegend');
+        if (routesLegend) {
+          routesLegend.innerHTML = '';
+          const legendOrder = vehicles
+            .map((label, index) => ({
+              label,
+              value: routesCount[index] || 0,
+              color: barColors[index % barColors.length]
+            }))
+            .sort((a, b) => b.value - a.value);
+
+          legendOrder.forEach(item => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'premium-legend-item';
+
+            const left = document.createElement('div');
+            left.className = 'premium-legend-left';
+
+            const dot = document.createElement('span');
+            dot.className = 'premium-legend-dot';
+            dot.style.backgroundColor = item.color;
+            dot.style.color = item.color;
+
+            const label = document.createElement('span');
+            label.className = 'premium-legend-label';
+            label.textContent = item.label;
+
+            const value = document.createElement('span');
+            value.className = 'premium-legend-value';
+            const percent = totalRoutesByVehicle > 0 ? Math.round((item.value / totalRoutesByVehicle) * 100) : 0;
+            value.textContent = `${item.value} (${percent}%)`;
+
+            left.appendChild(dot);
+            left.appendChild(label);
+            legendItem.appendChild(left);
+            legendItem.appendChild(value);
+            routesLegend.appendChild(legendItem);
+          });
+        }
 
         const centerTextPlugin = {
           id: 'centerTextPlugin',
@@ -614,10 +779,26 @@
 
             ctx.save();
             ctx.textAlign = 'center';
-            ctx.fillStyle = '#8fd15c';
-            ctx.font = '700 42px Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
+            ctx.fillStyle = '#edf4fc';
+            ctx.shadowColor = 'rgba(45, 86, 128, 0.35)';
+            ctx.shadowBlur = 10;
+            ctx.font = '700 44px Segoe UI, Tahoma, Geneva, Verdana, sans-serif';
             ctx.fillText(selectedValue.toLocaleString('pt-BR'), centerX, centerY + 8);
             ctx.restore();
+          }
+        };
+
+        const routeRingShadow = {
+          id: 'routeRingShadow',
+          beforeDatasetDraw(chart) {
+            const { ctx } = chart;
+            ctx.save();
+            ctx.shadowColor = 'rgba(46, 74, 108, 0.38)';
+            ctx.shadowBlur = 18;
+            ctx.shadowOffsetY = 6;
+          },
+          afterDatasetDraw(chart) {
+            chart.ctx.restore();
           }
         };
 
@@ -631,15 +812,19 @@
               label: 'Veículos carregados',
               data: routesCount,
               backgroundColor: vehicles.map((_, index) => barColors[index % barColors.length]),
-              borderColor: '#1f1f1f',
+              borderColor: 'rgba(10, 16, 24, 0.95)',
               borderWidth: 3,
-              hoverOffset: 4,
+              hoverOffset: 8,
               cutout: '72%'
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 1100,
+              easing: 'easeOutQuart'
+            },
             onClick(event, elements, chart) {
               if (elements.length > 0) {
                 const clickedIndex = elements[0].index;
@@ -652,6 +837,12 @@
             plugins: {
               legend: { display: false },
               tooltip: {
+                backgroundColor: 'rgba(11, 18, 28, 0.96)',
+                borderColor: '#7f9fc2',
+                borderWidth: 1,
+                titleColor: '#d7e6f7',
+                bodyColor: '#f3f8ff',
+                displayColors: true,
                 callbacks: {
                   label: context => {
                     const value = Number(context.parsed) || 0;
@@ -664,7 +855,7 @@
             cutout: '72%'
           }
           ,
-          plugins: [centerTextPlugin]
+          plugins: [centerTextPlugin, routeRingShadow]
         });
 
         renderHourlyCharts(dataset);
@@ -782,10 +973,15 @@
         const datasets = [{
           label: 'Contagem por dia',
           data: series.data,
-          borderColor: '#ffd166',
-          backgroundColor: 'rgba(255,209,102,0.15)',
+          borderColor: '#8aa9c9',
+          backgroundColor: 'rgba(92, 128, 168, 0.18)',
+          pointBackgroundColor: '#b8cde4',
+          pointBorderColor: '#1a2939',
+          pointRadius: 4,
+          pointHoverRadius: 6,
           fill: true,
-          tension: 0.2
+          tension: 0.28,
+          borderWidth: 2
         }];
 
         if (compareMode) {
@@ -797,10 +993,15 @@
           datasets.push({
             label: 'Semana anterior',
             data: prevSeries.data,
-            borderColor: '#7c4dff',
-            backgroundColor: 'rgba(124,77,255,0.12)',
+            borderColor: '#5f7894',
+            backgroundColor: 'rgba(62, 86, 112, 0.2)',
+            pointBackgroundColor: '#9cb3cb',
+            pointBorderColor: '#1a2939',
+            pointRadius: 3,
+            pointHoverRadius: 5,
             fill: true,
-            tension: 0.2
+            tension: 0.26,
+            borderWidth: 2
           });
         }
 
@@ -810,8 +1011,20 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#ffb347' } } },
-            scales: { x: { ticks: { color: '#ffb347' } }, y: { ticks: { color: '#ffb347' } } }
+            plugins: {
+              legend: { labels: { color: '#c7d8ea', boxWidth: 12, usePointStyle: true, pointStyle: 'circle' } },
+              tooltip: {
+                backgroundColor: 'rgba(11, 18, 28, 0.96)',
+                borderColor: '#7f9fc2',
+                borderWidth: 1,
+                titleColor: '#d7e6f7',
+                bodyColor: '#f3f8ff'
+              }
+            },
+            scales: {
+              x: { ticks: { color: '#b7cbe0' }, grid: { color: 'rgba(97, 124, 152, 0.18)' } },
+              y: { ticks: { color: '#b7cbe0' }, grid: { color: 'rgba(97, 124, 152, 0.18)' } }
+            }
           }
         });
       };
@@ -870,13 +1083,14 @@
             datasets: [{
               label: 'Veículos expedidos',
               data: hourly.vehicleData,
-              borderColor: '#ffb347',
-              backgroundColor: 'rgba(255,140,0,0.15)',
+              borderColor: '#8aa9c9',
+              backgroundColor: 'rgba(92, 128, 168, 0.18)',
               borderWidth: 2,
               fill: true,
               tension: 0.3,
               pointRadius: 4,
-              pointBackgroundColor: '#ffb347',
+              pointBackgroundColor: '#b8cde4',
+              pointBorderColor: '#1a2939',
               pointHoverRadius: 6
             }]
           },
@@ -885,19 +1099,26 @@
             maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
-              tooltip: { callbacks: { label: context => `${context.parsed.y} veículos` } },
+              tooltip: {
+                backgroundColor: 'rgba(11, 18, 28, 0.96)',
+                borderColor: '#7f9fc2',
+                borderWidth: 1,
+                titleColor: '#d7e6f7',
+                bodyColor: '#f3f8ff',
+                callbacks: { label: context => `${context.parsed.y} veículos` }
+              },
               datalabels: {
                 align: 'top',
                 anchor: 'end',
-                color: '#ffffff',
+                color: '#dce8f5',
                 font: { size: 12, weight: 'bold' },
                 formatter: value => value,
                 offset: 6
               }
             },
             scales: {
-              x: { ticks: { color: '#ffb347' }, grid: { display: false } },
-              y: { beginAtZero: true, ticks: { color: '#ffb347' }, grid: { color: 'rgba(255, 140, 0, 0.15)' } }
+              x: { ticks: { color: '#b7cbe0' }, grid: { color: 'rgba(97, 124, 152, 0.18)' } },
+              y: { beginAtZero: true, ticks: { color: '#b7cbe0' }, grid: { color: 'rgba(97, 124, 152, 0.18)' } }
             }
           }
         });
@@ -911,13 +1132,14 @@
             datasets: [{
               label: 'Pacotes expedidos',
               data: hourly.packageData,
-              borderColor: '#7c4dff',
-              backgroundColor: 'rgba(124,77,255,0.15)',
+              borderColor: '#5f7894',
+              backgroundColor: 'rgba(62, 86, 112, 0.22)',
               borderWidth: 2,
               fill: true,
               tension: 0.3,
               pointRadius: 4,
-              pointBackgroundColor: '#7c4dff',
+              pointBackgroundColor: '#9cb3cb',
+              pointBorderColor: '#1a2939',
               pointHoverRadius: 6
             }]
           },
@@ -926,19 +1148,26 @@
             maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
-              tooltip: { callbacks: { label: context => `${context.parsed.y} pacotes` } },
+              tooltip: {
+                backgroundColor: 'rgba(11, 18, 28, 0.96)',
+                borderColor: '#7f9fc2',
+                borderWidth: 1,
+                titleColor: '#d7e6f7',
+                bodyColor: '#f3f8ff',
+                callbacks: { label: context => `${context.parsed.y} pacotes` }
+              },
               datalabels: {
                 align: 'top',
                 anchor: 'end',
-                color: '#ffffff',
+                color: '#dce8f5',
                 font: { size: 12, weight: 'bold' },
                 formatter: value => value,
                 offset: 6
               }
             },
             scales: {
-              x: { ticks: { color: '#ffb347' }, grid: { display: false } },
-              y: { beginAtZero: true, ticks: { color: '#ffb347' }, grid: { color: 'rgba(255, 140, 0, 0.15)' } }
+              x: { ticks: { color: '#b7cbe0' }, grid: { color: 'rgba(97, 124, 152, 0.18)' } },
+              y: { beginAtZero: true, ticks: { color: '#b7cbe0' }, grid: { color: 'rgba(97, 124, 152, 0.18)' } }
             }
           }
         });
